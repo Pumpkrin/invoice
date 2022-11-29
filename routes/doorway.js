@@ -8,6 +8,7 @@ const multer_m = require('multer');
 const cbor_m = require('cbor');
 const util_m = require('node:util');
 
+const {credential_record_model, user_model} = require('../models/user');
 const server_configuration = {
   scheme: 'https',
   host: 'localhost',
@@ -16,8 +17,6 @@ const server_configuration = {
     return this.scheme + '://' + this.host + ':' + this.port;
   }
 };
-
-const users = [];
 
 const user_doorway = [
   multer_m().none(),
@@ -36,10 +35,6 @@ const user_doorway = [
 ];
 
 let issued_challenges = [];
-
-function found_user( current_user ){
-    return users.some( user => user.name === current_user ); 
-}
 
 function clear_issued_challenges( request, response, next ){
   const issued_challenge=issued_challenges.find( entry => entry.user === request.body.user );
@@ -64,11 +59,11 @@ const key_parameters = [{
 const send_registration_options = [ 
 (request, response, next) => {request.body.sign_type === 'sign_up' ? next() : next('route')},
 (request, response, next) => {
-  console.log('send_registration_options');
-  if(found_user( request.body.user )){ 
-    next( new Error('A user with the given username already exist: either sign in or use a different username' ) );
-  }
-  next()
+  user_model.find({ 'name': request.body.user }).then( user => {
+   user.length > 0 ? 
+     next( new Error('A user with the given username already exist: either sign in or use a different username' ) ):
+     next();
+  });
 }, 
 function send_registration_options(request, response) {
     const challenge = webcrypto_m.getRandomValues( new Uint8Array(32) );
@@ -100,11 +95,11 @@ function send_registration_options(request, response) {
 const send_authentication_options = [
 (request, response, next) => {request.body.sign_type === 'sign_in' ? next() : next('route')},
 (request, response, next) => {
-  console.log('send_authentication_options');
-  if(!found_user( request.body.user )){ 
-    next( new Error('No user with the given username was found: please sign up' ) );
-  }
-  next()
+  user_model.find({ 'name': request.body.user }).then( user => {
+   user.length > 0 ? 
+     next():
+     next( new Error('No user with the given username was found: please sign up' ) );
+  });
 }, 
 function send_authentication_options( request, response) {
   const challenge = webcrypto_m.getRandomValues( new Uint8Array(32) );
@@ -112,29 +107,29 @@ function send_authentication_options( request, response) {
     user: request.body.user,
     challenge: Buffer.from(challenge).toString('base64url'),
   });
-  const user = retrieve_user( request.body.user );
-  const options = {
-    required_action: 'authentication',
-    public_key: {
-      allow_credentials: [ {
-        id: user.id,
-        type: user.type 
-      } ],
-      user: {
-        name: user.name
-      },
-      timeout: 60000,
-      user_verification: 'required',
-      challenge: Buffer.from(challenge).toString('base64') 
-    }
-  };
-  response.send( options );
+  let user;
+  user_model.findOne({'name': request.body.user}).populate('credential_record')
+    .then( found_user => {
+      user = found_user;
+      const options = {
+        required_action: 'authentication',
+          public_key: {
+          allow_credentials: [ {
+            id: user.id,
+            type: user.credential_record.type 
+          } ],
+          user: {
+            name: user.name
+          },
+          timeout: 60000,
+          user_verification: 'required',
+          challenge: Buffer.from(challenge).toString('base64') 
+        }
+      };
+      response.send( options );
+    });
 },
 ];
-
-function retrieve_user( current_user ) {
-  return users.find( user => user.name === current_user ); 
-}
 
 function apply_property_chain( target, property_chain ) {
   return property_chain.reduce( (target, property) => target[property], target ); 
@@ -337,26 +332,32 @@ const registration_ceremony = [
     }
     next();
   },
-  function check_user_existence( request, response, next ){
-    if( users.some( user => user.id === request.raw_id ) ){
-      next( new Error('Something went wrong with the connection procedure: please try again later') );
-    }
-    next();
-  },
+//  function check_user_existence( request, response, next ){
+//    if( users.some( user => user.id === request.raw_id ) ){
+//      next( new Error('Something went wrong with the connection procedure: please try again later') );
+//    }
+//    next();
+//  },
   function register_user( request, response ){
-    users.push( {
-      type: request.body.type,
-      name: request.body.user, 
+    const user = new user_model({
+      name: request.body.user,
       id: request.body.raw_id,
+      profile: '',
+      discussion: []
+    });
+    const record = new credential_record_model({
+      type: request.body.type,
       public_key: request.body.authenticator_response.attestation.credential_data.jwk_key,
       sign_count: request.body.authenticator_response.attestation.signature_count,
-      transports: request.body.transports,
-    } );
-
-    response.end();
+      transports: request.body.authenticator_response.transports,
+    });
+    user.credential_record = record._id;
+    record.user = user._id;
+    user.save().then( () => record.save() ).then( () => response.end() ).catch(console.error); 
   }
 ];
 
+let counter = 0;
 const authentication_ceremony = [
   express.json(),
 //  function( request, response, next ){ console.log(request.body); next(); },
@@ -369,12 +370,14 @@ const authentication_ceremony = [
     next()
   },
   function user_identification( request, response, next ) {
-    const user = retrieve_user( request.body.user );
-    if( user.id !== request.body.raw_id ){
-      next( new Error('Something went wrong with the connection procedure: please try again later') );
-    }
-    request.body.credential_record = user;
-    next();
+    user_model.findOne( {'name': request.body.user} ).populate('credential_record')
+      .then( user => {
+        if( user.id !== request.body.raw_id ){
+          next( new Error('Something went wrong with the connection procedure: please try again later') );
+        }
+        request.body.credential_record = user.credential_record;
+        next();
+    });
   },
   check_client_data.bind(null, 'webauthn.get'),
   check_hash.bind(null, ['data']),
