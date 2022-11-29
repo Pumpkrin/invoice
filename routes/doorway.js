@@ -29,7 +29,7 @@ const user_doorway = [
   (request, response, next) => {
     const result = validation_result( request );
     if( result.errors.length > 0 ){
-      next( new Error( result.errors[0].msg, {type: 'invalid_username'} ) )
+      next( new Error( result.errors[0].msg ) )
     }
     next('route');
   },
@@ -66,7 +66,7 @@ const send_registration_options = [
 (request, response, next) => {
   console.log('send_registration_options');
   if(found_user( request.body.user )){ 
-    next( new Error('A user with the given username already exist: either sign in or use a different username', {type: 'failure'} ) );
+    next( new Error('A user with the given username already exist: either sign in or use a different username' ) );
   }
   next()
 }, 
@@ -102,7 +102,7 @@ const send_authentication_options = [
 (request, response, next) => {
   console.log('send_authentication_options');
   if(!found_user( request.body.user )){ 
-    next( new Error('No user with the given username was found: please sign up', {type: 'failure'} ) );
+    next( new Error('No user with the given username was found: please sign up' ) );
   }
   next()
 }, 
@@ -144,7 +144,7 @@ function check_client_data(type, request, response, next ) {
   const client_data = request.body.authenticator_response.client_data
   const client_data_JSON = JSON.parse( client_data.toString('utf8') );
   if( client_data_JSON.type !== type ){ 
-    next( new Error('client_data.type is incorrect', {type: 'failure'}) );
+    next( new Error('Something went wrong with the connection procedure: please try again later') );
   }
 
   const issued_challenge = issued_challenges.splice(
@@ -152,10 +152,11 @@ function check_client_data(type, request, response, next ) {
     1
   ).reduce( () => {} );
   if(issued_challenge.challenge !== client_data_JSON.challenge){
-    next( new Error('client_data.challenge is incorrect', {type: 'failure'}) );
+    next( new Error('Something went wrong with the connection procedure: please try again later') );
   }
 
   if( client_data_JSON.origin !== server_configuration.serialize()){
+    next( new Error('Something went wrong with the connection procedure: please try again later') );
     next( new Error('client_data.origin is incorrect', {type:'failure'} ) );
   }
   next();
@@ -168,6 +169,7 @@ function check_hash(property_chain, request, response, next) {
     .update( server_configuration.host )
     .digest(); 
   if( hash.compare( data, 0, 32 ) ){
+    next( new Error('Something went wrong with the connection procedure: please try again later') );
     next( new Error('hash incorrect', {type:'failure'}) );
   }
   next();
@@ -220,7 +222,7 @@ const registration_ceremony = [
       request.body.authenticator_response.attestation = attestation;
       next();
     }).catch( rejection_reason => 
-      next( new Error('cbor decoding failed', {type:'failure', cause: rejection_reason} ) )
+      next( new Error('Something went wrong with the connection procedure: please try again later') )
     );
   },    
   check_hash.bind(null, ['attestation','authData']),
@@ -236,13 +238,13 @@ const registration_ceremony = [
     const attestation = request.body.authenticator_response.attestation;
     //TODO: arguably, unsupported not failure ?
     if( !attestation.flags.user_presence ){
-      next( new Error('UP flag not set', {type:'failure'}));
+      next( new Error('Something went wrong with the connection procedure: please try again later') );
     }
     if( !attestation.flags.user_verification ){
-      next( new Error('UV flag not set', {type:'failure'}));
+      next( new Error('Something went wrong with the connection procedure: please try again later') );
     }
     if( !attestation.flags.credential_data ){
-      next( new Error('AT should be included', {type:'failure'}));
+      next( new Error('Something went wrong with the connection procedure: please try again later') );
     }
     next();
   },
@@ -258,7 +260,7 @@ const registration_ceremony = [
       id_length: credential_data.readUint16BE( 16 ),
     };
     if( attestation.credential_data.id_length > 1023 ){
-      next( new Error('id is too long', {type: 'failure'} ) );
+      next( new Error('Something went wrong with the connection procedure: please try again later') );
     }
     attestation.credential_data.id = credential_data.subarray(
       18, 
@@ -277,18 +279,18 @@ const registration_ceremony = [
       }
       next();
     }).catch( rejection_reason => 
-      next( new Error('cbor decoding failed', {type:'failure', cause: rejection_reason} ) )
+      next( new Error('Something went wrong with the connection procedure: please try again later') )
     );
   },
   function check_attestation( request, response, next ) {
     const attestation = request.body.authenticator_response.attestation;
     if( !key_parameters.some( entry => attestation.credential_data.public_key.get(3) === entry.alg ) ){
-      next( new Error('algorithm not supported', {type:'unsupported'} ) );
+      next( new Error('The device used to connect is not currently supported by invoice') );
     }
 
     const formats = [ 'packed' ];
     if( !formats.some( format => attestation.fmt === format ) ){
-      next( new Error('attestion format not supported', {type:'unsupported'}) );
+      next( new Error('The device used to connect is not currently supported by invoice') );
     }
 
     next();
@@ -309,7 +311,7 @@ const registration_ceremony = [
   function verification_procedure( request, response, next) {
     const attestation = request.body.authenticator_response.attestation;
     if( attestation.credential_data.public_key.get(3) !== attestation.attStmt.alg ){
-      next( new Error('Mismatch between algorithms', {type:'failure'} ) );
+      next( new Error('Something went wrong with the connection procedure: please try again later') );
     }
     
     const hash = crypto_m.createHash('sha256')
@@ -321,7 +323,7 @@ const registration_ceremony = [
                attestation.attStmt.sig
              ); 
     if( !valid_signature ){
-      next( new Error('invalid signature', {type:'failure'}) );
+      next( new Error('Something went wrong with the connection procedure: please try again later') );
     }
 
     attestation.type= 'self';
@@ -331,13 +333,13 @@ const registration_ceremony = [
   function check_signature_trustworthiness( request, response, next ){
     const attestation = request.body.authenticator_response.attestation;
     if( attestation.type !== 'self' ){
-      next( new Error( 'attestation type not supported', {type: 'unsupported'} ) );
+      next( new Error('The device used to connect is not currently supported by invoice') );
     }
     next();
   },
   function check_user_existence( request, response, next ){
     if( users.some( user => user.id === request.raw_id ) ){
-      next( new Error( 'duplicate credential id', {type: 'failure'} ) );
+      next( new Error('Something went wrong with the connection procedure: please try again later') );
     }
     next();
   },
@@ -369,7 +371,7 @@ const authentication_ceremony = [
   function user_identification( request, response, next ) {
     const user = retrieve_user( request.body.user );
     if( user.id !== request.body.raw_id ){
-      next( new Error('IDs do not match', {type: 'failure'}) );
+      next( new Error('Something went wrong with the connection procedure: please try again later') );
     }
     request.body.credential_record = user;
     next();
@@ -384,10 +386,10 @@ const authentication_ceremony = [
   function check_flags( request, response, next ){
     const authenticator_response = request.body.authenticator_response;
     if( !authenticator_response.flags.user_presence ){
-      next( new Error('UP flag not set', {type:'failure'}));
+      next( new Error('Something went wrong with the connection procedure: please try again later') );
     }
     if( !authenticator_response.flags.user_verification ){
-      next( new Error('UV flag not set', {type:'failure'}));
+      next( new Error('Something went wrong with the connection procedure: please try again later') );
     }
     next();
   },
@@ -403,16 +405,19 @@ const authentication_ceremony = [
                      authenticator_response.signature
                    ); 
     if( !valid_signature ){
-      next( new Error('invalid signature', {type:'failure'}) );
+      next( new Error('Something went wrong with the connection procedure: please try again later') );
     }
     next();
   },
   function update_signature_count( request, response, next ){
-//    const record = request.body.credential_record; 
-//    const signature_count = request.body.authenticator_response.signature_count;
-    //TODO: security measure
-//    if(signature_count != 0 || record.signature_count != 0 ){
-//      signature_count > record.signature_count ? 
+    const record = request.body.credential_record; 
+    const signature_count = request.body.authenticator_response.signature_count;
+    if( 
+      (signature_count != 0 || record.signature_count != 0) &&
+      signature_count <= record.signature_count 
+    ){
+      next( new Error('Something went wrong with the connection procedure: please try again later') );
+    }
     next();
   },
   function authenticate_user( request, response ){
