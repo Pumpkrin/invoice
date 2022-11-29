@@ -1,0 +1,20 @@
+extends layout
+
+block content
+  dialog
+    form(method='dialog')
+      fieldset(class='aesthetics_pannel flow_flex_column')
+        input(type='text', autofocus, name='user', placeholder='Enter user name', required,
+        minlength="3",  maxlength="10", class='aesthetics_interaction' )
+        div(data-type='connection_error' class='hidden')
+        div(class='flow_flex')
+          label(class='flow_center', data-display='Sign up') 
+            input(type='radio', name='sign_type', value='sign_up', class='aesthetics_interaction aesthetics_icon aesthetics_selectable flow_center') 
+          button(data-type='request_connection', class='aesthetics_interaction aesthetics_icon flow_flex') 
+            svg(viewBox='0 0 10 10')
+              path(d='M1,5h4v-1l2,1l-2,1v-1')
+              path(fill='none' d='M3,3v-2h6v8h-6v-2')             
+          label(class='flow_center', data-display='Sign in')
+            input(type='radio', name='sign_type', value='sign_in', class='aesthetics_interaction aesthetics_icon aesthetics_selectable flow_center', checked) 
+  div(data-type='home', class='aesthetics_pannel')
+

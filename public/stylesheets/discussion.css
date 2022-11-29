@@ -1,0 +1,243 @@
+@layer discussion {
+
+input[type=range] {
+  -webkit-appearance: none;
+  inline-size: 100%;
+  background: transparent;
+  margin:0;
+}
+input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; }
+input[type=range]:focus{ outline: none }
+
+[data-type='discussion']{
+  block-size: 600px;
+  gap: 10px;
+}
+
+[data-type='messages'] {
+  display:flex;
+  flex-direction: column;
+  justify-content: start;
+  align-items:start;
+  gap: 3px;
+  overflow-y: scroll;
+
+  flex: 1 0 auto;
+  inline-size: 300px;
+  block-size: 450px;
+  padding: 2px;
+  border-block-end: 2px solid rgba(
+    var(--main-color-r),
+    var(--main-color-g),
+    var(--main-color-b), 0.43);
+  transition: flex-shrink 300ms;
+}
+.shrunk {
+  flex-shrink: 1;
+}
+
+[data-type='replay_track_list']{
+  flex: 1 0 auto;
+  overflow:hidden;
+  gap: 3px;
+  padding: 1px;
+}
+
+[data-type='controls']{
+  flex: none;
+  display: grid;
+  grid-template-columns: repeat(3, auto );
+  /*only for now, in order to keep the mic position fixed*/
+  grid-template-rows: repeat(2, auto ) 30px;
+  --gap-size :10px;
+  gap: var(--gap-size) ;
+  padding: 10px;
+  overflow: hidden;
+  transition: grid-template-rows 300ms;
+}
+[data-type='controls']:has( > [data-type='validator']){
+  grid-template-rows: repeat(3, 30px);
+}
+
+/*------------------------message-track--------------------------*/
+message-track{
+  --block_size_icon: 24px;
+  --inline_size_icon: 24px;
+  inline-size: 70%;
+  position: relative;
+  --inline_offset: 0;
+  transform: translateX(var(--inline_offset));
+  transition: transform 100ms;
+}
+message-track[data-state='active'], message-track:has(input:checked){
+  --inline_offset: 20px;
+}
+message-track[data-status='unselectable']{
+  --inline_offset: 0;
+}
+message-track.user_authored{
+  align-self:end;
+  flex-direction: row-reverse;
+}
+
+message-track > input[type='checkbox'] {
+  -webkit-appearance: none;
+  appearance: none;
+  margin: 0;
+  pointer-events: none;
+
+  display:grid;
+  place-items: center;
+
+  border-radius: 50%;
+  inline-size: 16px;
+  block-size: 16px;
+
+  position: absolute;
+  inset-inline-start:0%;
+
+  overflow:hidden;
+}
+message-track> input[type='checkbox']::after{
+  content: '';
+  inline-size: 65%;
+  block-size: 65%;
+  border-radius: 50%;
+  background: rgba( 
+    var(--main-color-r)
+    var(--main-color-g)
+    var(--main-color-b)
+    / 0.9);
+  transform: scale(0);
+  transition: transform 100ms ease;
+}
+message-track> input[type='checkbox']:checked::after{
+  transform: scale(1);
+}
+/*animate_popup counterpart*/
+message-track[data-state='active']:not([data-status='unselectable']) > input[type='checkbox'],
+message-track:not([data-status='unselectable']) > input[type='checkbox']:checked {
+  cursor: pointer;
+  pointer-events: auto;
+  --switch:1;
+  --inline_position: calc( -1 * var(--inline_offset)) ;
+}
+
+message-track > [data-type='sound_track'] {
+  --inline_size_icon_content: 6px;
+  --block_size_icon_content: 24px;
+  position:relative;
+  color: var(--main-color);
+}
+message-track > [data-type='sound_track'] > input{
+  position:absolute;
+  inset-inline-start:-1px;
+  inline-size: calc( 25 * var(--inline_size_icon_content) + 2px);
+}
+message-track > [data-type='sound_track'] > input::-webkit-slider-thumb { 
+  box-sizing: border-box;
+  inline-size:8px;
+  block-size: 28px;
+  border-radius:50%/25%;
+  cursor: pointer;
+
+  border: 1px solid rgba(  
+    var(--contrasting-color-r)
+    var(--contrasting-color-g)
+    var(--contrasting-color-b)
+    / 0.8);
+  background:transparent;
+}
+message-track > [data-type='sound_track'] > input::-webkit-slider-runnable-track { 
+  inline-size: calc( 25 * var(--inline_size_icon_content) + 2px);
+}
+
+message-track > [data-type='sound_track'] > input::-moz-range-thumb {
+  box-sizing: border-box;
+  inline-size:8px;
+  block-size: 28px;
+  border-radius:50%/25%;
+  cursor: pointer;
+
+  border: 1px solid rgba(  
+    var(--contrasting-color-r)
+    var(--contrasting-color-g)
+    var(--contrasting-color-b)
+    / 0.8);
+  background:transparent;
+}
+message-track > [data-type=sound_track] > input::-moz-range-track {
+  inline-size: calc( 25 * var(--inline_size_icon_content) + 2px);
+}
+message-track > [data-type=sound_track] > svg{ 
+  stroke-width:1px;
+}
+
+message-track > [data-type='timeline']{
+  font-size: 0.7rem;
+  color: var(--contrasting-color);
+  position:absolute;
+  inset-inline-end:0%;
+}
+message-track.user_authored > [data-type='timeline']{
+  inset-inline-start:0;
+}
+message-track:hover > [data-type='timeline'],
+message-track[data-state='active'] > [data-type='timeline']{
+  --switch:1;
+  --inline_position: 120%;
+}
+message-track.user_authored[data-state='active'] > [data-type='timeline']{
+  --switch:1;
+  --inline_position: -120%;
+}
+
+
+/*------------------------replay-track--------------------------*/
+replay-track{
+  --block-start-a: 250%;
+  animation: pull-in ease 300ms ;
+  font-family: inherit;
+  font-size: inherit;
+}
+
+replay-track:last-child:not(:first-child)[data-status='incomplete']{
+  border-block-start: 2px solid rgba(var(--main-color) / 0.6);
+  padding-block-start: 3px;
+}
+
+/*------------------------controls--------------------------*/
+[data-type='controls']{
+  --block_size_icon_content: 24px;
+  --block_size_icon: 30px;
+  --inline_size_icon: 30px;
+}
+
+[data-type='recorder_controller']{ grid-column: 2; grid-row: 2; }
+[data-type='controls'] > *[data-state='active'] > svg {
+  stroke: #CA0209;
+  fill : #CA0209; 
+}
+
+[data-type='controls'] > :not([data-type='recorder_controller']) {
+  animation: pull-in ease 300ms ;
+}
+[data-type='sender']{
+  grid-column: 3; grid-row: 2; 
+  --inline-start-a: calc(-1 * (var(--gap-size) + 100%));
+}
+[data-type='validator']{
+  grid-column: 2; grid-row: 1; 
+  --block-start-a: calc(var(--gap-size) + 100%);
+}
+[data-type='rejector']{
+  grid-column: 2; grid-row: 3; 
+  --block-start-a: calc(-1 * (var(--gap-size) + 100%));
+}
+[data-type='eraser']{
+  grid-column: 1; grid-row: 2; 
+  --inline-start-a: calc(var(--gap-size) + 100%);
+}
+
+
+}/*@layer button*/
