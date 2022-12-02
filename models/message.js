@@ -4,9 +4,9 @@ const schema_c = mongoose_m.Schema;
 
 const message_schema = new schema_c({
   mimetype: String,
-  discussion: String, 
+  discussion: {type: schema_c.Types.ObjectId, ref:'discussion'}, 
   type: String,
-  author_id: String,
+  author: {type: schema_c.Types.ObjectId, ref:'user'}, 
   visualisation: [Number], 
   track_counter: Number,
 });
@@ -23,5 +23,4 @@ message_schema.virtual('url').get( function() {
 });
 //TODO: receiver is virtual: composed from discussion and author ? but if in alphabetical order? you can find in string, no matter the position
 
-// Export model
 module.exports = mongoose_m.model("message", message_schema);

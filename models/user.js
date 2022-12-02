@@ -22,7 +22,7 @@ const credential_record_model = mongoose_m.model('credential_record', credential
 const user_schema = new schema_c({
   name: String,
   id: String,
-  profile: String,
+  avatar: String,
   discussions: [{type:schema_c.Types.ObjectId, ref: 'discussion'}],
   credential_record: {type: schema_c.Types.ObjectId, ref: 'credential_record'},
 });
