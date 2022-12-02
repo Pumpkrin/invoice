@@ -124,12 +124,6 @@
 }
 
 
-svg {
-  block-size: var(--block_size_icon_content); 
-  inline-size: var(--inline_size_icon_content); 
-  stroke: currentcolor;
-  fill: currentcolor;
-}
 
 @keyframes pull-in{
   from{
@@ -171,6 +165,7 @@ body {
       var(--contrasting-color-r),
       var(--contrasting-color-g),
       var(--contrasting-color-b), 0.1);
+  -webkit-backdrop-filter: blur(3px);
   backdrop-filter: blur(3px);
   border: 2px solid rgba(
       var(--main-color-r),
@@ -185,16 +180,17 @@ dialog{
 }
 dialog::backdrop{
   background: hsl( 0 0 10% / 0.5);
+  -webkit-backdrop-filter:blur(3px);
   backdrop-filter:blur(3px);
 }
 
-dialog input[type='text']{
+input[type='text']{
   font-size: 1rem;
   border-radius: 7px;
   text-align:center;
   inline-size: 15rem;
 }
-dialog input[type='text']::placeholder{
+input[type='text']::placeholder{
   color: rgba(
     var(--main-color-r),
     var(--main-color-g), 
@@ -238,7 +234,7 @@ dialog label:nth-of-type(1):has(input:checked)::before{
 dialog label:nth-of-type(2):has(input:checked)::before{
   --inline_position: calc(50% + 0.5*(var(--gap) + var(--inline_size_icon)));
 }
-dialog [data-type='request_connection']{
+dialog [data-type='request_connection'], [data-type='home'] {
   --block_size_icon_content: 24px;
   --inline_size_icon_content: 24px;
   --block_size_icon: 30px;
@@ -246,8 +242,30 @@ dialog [data-type='request_connection']{
 }
 
 [data-type='home']{
-  inline-size: 400px;
-  block-size: 600px;
+  position:relative;
+  inline-size: 21rem;
+  gap: 10px;
+}
+
+[data-type='home'] > h1 {
+  font-size: 1.2rem;
+  margin: 0; 
+  align-self: start;
+}
+[data-type='home'] > avatar-icon {
+  border-radius: 50%;
+  position: absolute;
+  inset-block-start: -1rem;
+  inset-inline-start: 78%;
+}
+[data-type='discussions'] {
+  display:grid;
+  grid-template-columns: repeat(4, 80px);
+  grid-template-rows: repeat(3, 100px);
+  gap: 5px;
+  padding: 5px;
+  overflow-y: scroll;
+  overflow-x: hidden;
 }
 /*div{
   outline: 1px solid red;

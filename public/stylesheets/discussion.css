@@ -239,5 +239,11 @@ replay-track:last-child:not(:first-child)[data-status='incomplete']{
   --inline-start-a: calc(var(--gap-size) + 100%);
 }
 
+svg {
+  block-size: var(--block_size_icon_content); 
+  inline-size: var(--inline_size_icon_content); 
+  stroke: currentcolor;
+  fill: currentcolor;
+}
 
 }/*@layer button*/
