@@ -1,0 +1,33 @@
+@layer avatar{
+avatar-icon{
+  position: relative;
+  --angle: calc( 360deg / var(--counter) );
+  --size: calc( 100%/ ( var(--counter)/2 +1 ));
+  inline-size:60px;
+  block-size: 60px;
+}
+
+avatar-icon > svg {
+  fill: var(--contrasting-color);
+  inline-size: var(--size);
+  block-size: var(--size);
+  
+  position:absolute;
+  --rotation: calc(var(--index) * var(--angle));
+  transform: rotate(var(--rotation)) translateX(20px) rotate(var(--self_rotation));
+}
+
+avatar-icon > svg:nth-child(1){ --index: 0 }
+avatar-icon > svg:nth-child(2){ --index: 1 }
+avatar-icon > svg:nth-child(3){ --index: 2 }
+avatar-icon > svg:nth-child(4){ --index: 3 }
+avatar-icon > svg:nth-child(5){ --index: 4 }
+avatar-icon > svg:nth-child(6){ --index: 5 }
+avatar-icon > svg:nth-child(7){ --index: 6 }
+avatar-icon > svg:nth-child(8){ --index: 7 }
+avatar-icon > svg:nth-child(9){ --index: 8 }
+avatar-icon > svg:nth-child(10){ --index: 9 }
+avatar-icon > svg:nth-child(11){ --index: 10 }
+avatar-icon > svg:nth-child(12){ --index: 11 }
+
+}/*@layer avatar*/
