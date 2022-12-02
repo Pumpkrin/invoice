@@ -8,6 +8,9 @@ const multer_m = require('multer');
 const cbor_m = require('cbor');
 const util_m = require('node:util');
 
+const session_id_m = require('../misc/session_id');
+const {generate_avatar} = require('../misc/avatar');
+
 const {credential_record_model, user_model} = require('../models/user');
 const server_configuration = {
   scheme: 'https',
@@ -139,7 +142,7 @@ function check_client_data(type, request, response, next ) {
   const client_data = request.body.authenticator_response.client_data
   const client_data_JSON = JSON.parse( client_data.toString('utf8') );
   if( client_data_JSON.type !== type ){ 
-    next( new Error('Something went wrong with the connection procedure: please try again later') );
+    next( failure_error() );
   }
 
   const issued_challenge = issued_challenges.splice(
@@ -147,12 +150,11 @@ function check_client_data(type, request, response, next ) {
     1
   ).reduce( () => {} );
   if(issued_challenge.challenge !== client_data_JSON.challenge){
-    next( new Error('Something went wrong with the connection procedure: please try again later') );
+    next( failure_error() );
   }
 
   if( client_data_JSON.origin !== server_configuration.serialize()){
-    next( new Error('Something went wrong with the connection procedure: please try again later') );
-    next( new Error('client_data.origin is incorrect', {type:'failure'} ) );
+    next( failure_error() );
   }
   next();
 }
@@ -164,8 +166,7 @@ function check_hash(property_chain, request, response, next) {
     .update( server_configuration.host )
     .digest(); 
   if( hash.compare( data, 0, 32 ) ){
-    next( new Error('Something went wrong with the connection procedure: please try again later') );
-    next( new Error('hash incorrect', {type:'failure'}) );
+    next( failure_error() );
   }
   next();
 }
@@ -200,6 +201,24 @@ function extract_signature_count(options, request, response, next){
   next();
 }
 
+function allow_access( request, response ){
+  const session = session_id_m.add_session( request.body.user ); 
+  response.setHeader('Set-Cookie', [
+    `session=${session.id};Secure; HttpOnly; Path=/; SameSite=Strict`,
+    `user=${session.user};Secure; HttpOnly; Path=/; SameSite=Strict`, 
+  ]);
+  user_model.findOne({'name': request.body.user}, '-_id avatar discussions')
+    .populate('discussions')
+    .then( user => {console.log(user);response.send(user);}); 
+}
+
+function failure_error(){
+  return new Error('Something went wrong with the connection procedure: please try again later')
+}
+function support_error(){
+ return new Error('The device used to connect is not currently supported by invoice'); 
+}
+
 const registration_ceremony = [
   express.json(),
 //  function( request, response, next ){ console.log(request.body); next(); },
@@ -217,7 +236,7 @@ const registration_ceremony = [
       request.body.authenticator_response.attestation = attestation;
       next();
     }).catch( rejection_reason => 
-      next( new Error('Something went wrong with the connection procedure: please try again later') )
+      next( failure_error() )
     );
   },    
   check_hash.bind(null, ['attestation','authData']),
@@ -233,13 +252,13 @@ const registration_ceremony = [
     const attestation = request.body.authenticator_response.attestation;
     //TODO: arguably, unsupported not failure ?
     if( !attestation.flags.user_presence ){
-      next( new Error('Something went wrong with the connection procedure: please try again later') );
+      next( failure_error() )
     }
     if( !attestation.flags.user_verification ){
-      next( new Error('Something went wrong with the connection procedure: please try again later') );
+      next( failure_error() )
     }
     if( !attestation.flags.credential_data ){
-      next( new Error('Something went wrong with the connection procedure: please try again later') );
+      next( failure_error() )
     }
     next();
   },
@@ -255,7 +274,7 @@ const registration_ceremony = [
       id_length: credential_data.readUint16BE( 16 ),
     };
     if( attestation.credential_data.id_length > 1023 ){
-      next( new Error('Something went wrong with the connection procedure: please try again later') );
+      next( failure_error() )
     }
     attestation.credential_data.id = credential_data.subarray(
       18, 
@@ -274,18 +293,18 @@ const registration_ceremony = [
       }
       next();
     }).catch( rejection_reason => 
-      next( new Error('Something went wrong with the connection procedure: please try again later') )
+      next( failure_error() )
     );
   },
   function check_attestation( request, response, next ) {
     const attestation = request.body.authenticator_response.attestation;
     if( !key_parameters.some( entry => attestation.credential_data.public_key.get(3) === entry.alg ) ){
-      next( new Error('The device used to connect is not currently supported by invoice') );
+      next( supported_error() );
     }
 
     const formats = [ 'packed' ];
     if( !formats.some( format => attestation.fmt === format ) ){
-      next( new Error('The device used to connect is not currently supported by invoice') );
+      next( supported_error() );
     }
 
     next();
@@ -306,7 +325,7 @@ const registration_ceremony = [
   function verification_procedure( request, response, next) {
     const attestation = request.body.authenticator_response.attestation;
     if( attestation.credential_data.public_key.get(3) !== attestation.attStmt.alg ){
-      next( new Error('Something went wrong with the connection procedure: please try again later') );
+      next( failure_error() )
     }
     
     const hash = crypto_m.createHash('sha256')
@@ -318,7 +337,7 @@ const registration_ceremony = [
                attestation.attStmt.sig
              ); 
     if( !valid_signature ){
-      next( new Error('Something went wrong with the connection procedure: please try again later') );
+      next( failure_error() )
     }
 
     attestation.type= 'self';
@@ -328,7 +347,7 @@ const registration_ceremony = [
   function check_signature_trustworthiness( request, response, next ){
     const attestation = request.body.authenticator_response.attestation;
     if( attestation.type !== 'self' ){
-      next( new Error('The device used to connect is not currently supported by invoice') );
+      next( supported_error() );
     }
     next();
   },
@@ -338,13 +357,14 @@ const registration_ceremony = [
 //    }
 //    next();
 //  },
-  function register_user( request, response ){
+  function register_user( request, response, next ){
     const user = new user_model({
       name: request.body.user,
       id: request.body.raw_id,
-      profile: '',
-      discussion: []
+      avatar: generate_avatar(),
+      discussions: []
     });
+    console.log(user);
     const record = new credential_record_model({
       type: request.body.type,
       public_key: request.body.authenticator_response.attestation.credential_data.jwk_key,
@@ -353,8 +373,12 @@ const registration_ceremony = [
     });
     user.credential_record = record._id;
     record.user = user._id;
-    user.save().then( () => record.save() ).then( () => response.end() ).catch(console.error); 
-  }
+    user.save()
+      .then( () => record.save() )
+      .then( () => next() )
+      .catch(console.error); 
+  },
+  allow_access
 ];
 
 let counter = 0;
@@ -373,7 +397,7 @@ const authentication_ceremony = [
     user_model.findOne( {'name': request.body.user} ).populate('credential_record')
       .then( user => {
         if( user.id !== request.body.raw_id ){
-          next( new Error('Something went wrong with the connection procedure: please try again later') );
+          next( failure_error() )
         }
         request.body.credential_record = user.credential_record;
         next();
@@ -389,10 +413,10 @@ const authentication_ceremony = [
   function check_flags( request, response, next ){
     const authenticator_response = request.body.authenticator_response;
     if( !authenticator_response.flags.user_presence ){
-      next( new Error('Something went wrong with the connection procedure: please try again later') );
+      next( failure_error() )
     }
     if( !authenticator_response.flags.user_verification ){
-      next( new Error('Something went wrong with the connection procedure: please try again later') );
+      next( failure_error() )
     }
     next();
   },
@@ -408,7 +432,7 @@ const authentication_ceremony = [
                      authenticator_response.signature
                    ); 
     if( !valid_signature ){
-      next( new Error('Something went wrong with the connection procedure: please try again later') );
+      next( failure_error() )
     }
     next();
   },
@@ -419,13 +443,11 @@ const authentication_ceremony = [
       (signature_count != 0 || record.signature_count != 0) &&
       signature_count <= record.signature_count 
     ){
-      next( new Error('Something went wrong with the connection procedure: please try again later') );
+      next( failure_error() )
     }
     next();
   },
-  function authenticate_user( request, response ){
-    response.end();
-  }
+  allow_access
 ];
 
 router.post('/', user_doorway); 

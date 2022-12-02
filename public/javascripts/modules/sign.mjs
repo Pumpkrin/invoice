@@ -1,7 +1,9 @@
 'use strict';
 import * as utility_m from './utility.mjs'
+import './avatar.mjs';
+import {load_home} from './home.mjs';
 
-const form = document.querySelector('form'); 
+const form = document.querySelector('[data-type="connection_form"]'); 
 form.addEventListener(
   'submit',
   function user_authentication_handler( event ) {
@@ -17,12 +19,17 @@ form.addEventListener(
       .then( response => {
         if( !response_status ){ throw Error(response.error); }
         return response;
-      }).then( options => { user = options.public_key.user.name; return options; } );  
+      }).then( options => { console.log(options);  user = options.public_key.user.name; return options; } );  
 
-    function finalize_connection( response ){
-      if(!response.ok){ throw Error('something went wrong with the ceremony');}
-      const dialog = document.querySelector('dialog');
-      dialog.close();
+    function finalize_connection(message, response){
+      let response_status = response.ok;
+      return response.json().then( response => {
+        if(!response_status){throw Error( response.error );}
+        console.log(response.discussions);
+        load_home( {message: message, user: user, avatar: response.avatar, discussions: response.discussions} );
+        const dialog = document.querySelector('dialog[data-type="connection_dialog"]');
+        dialog.close();
+      });
     }
     const registration_path = [
       function registration( options ){
@@ -39,7 +46,7 @@ form.addEventListener(
           body: JSON.stringify(utility_m.apply_format(credential, 'attestation'))
         });
       },
-      finalize_connection
+      finalize_connection.bind( null, '' )
     ];
     const authentication_path = [
       function authentication( options ){
@@ -56,7 +63,7 @@ form.addEventListener(
           body: JSON.stringify(utility_m.apply_format(credential, 'assertion'))
         });
       },
-      finalize_connection
+      finalize_connection.bind( null, ' back' )
     ];
 
     function silence_pathing( rejection_reason ){
