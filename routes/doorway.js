@@ -31,7 +31,7 @@ const user_doorway = [
   (request, response, next) => {
     const result = validation_result( request );
     if( result.errors.length > 0 ){
-      next( new Error( result.errors[0].msg ) )
+      return next( new Error( result.errors[0].msg ) )
     }
     next('route');
   },
@@ -43,7 +43,7 @@ function clear_issued_challenges( request, response, next ){
   const issued_challenge=issued_challenges.find( entry => entry.user === request.body.user );
   if( issued_challenge ){ 
     issued_challenges.splice(
-      issued_challenges.findIndex( entry => entry.user === body.user ),
+      issued_challenges.findIndex( entry => entry.user === request.body.user ),
       1
     );
   }
@@ -63,9 +63,9 @@ const send_registration_options = [
 (request, response, next) => {request.body.sign_type === 'sign_up' ? next() : next('route')},
 (request, response, next) => {
   user_model.find({ 'name': request.body.user }).then( user => {
-   user.length > 0 ? 
-     next( new Error('A user with the given username already exist: either sign in or use a different username' ) ):
-     next();
+    return user.length > 0 ? 
+      next( new Error('A user with the given username already exist: either sign in or use a different username' ) ):
+      next();
   });
 }, 
 function send_registration_options(request, response) {
@@ -87,6 +87,11 @@ function send_registration_options(request, response) {
         },
         pubKeyCredParams: key_parameters,
         attestation: 'indirect', 
+        authenticatorSelection:{
+          requireResidentKey: false,
+          residentKey: 'preferred',
+          userVerification: 'required'
+        },
         timeout: 60000,
         challenge: Buffer.from(challenge).toString('base64') 
       }
@@ -96,12 +101,14 @@ function send_registration_options(request, response) {
 ];
 
 const send_authentication_options = [
-(request, response, next) => {request.body.sign_type === 'sign_in' ? next() : next('route')},
+(request, response, next) => {
+  return request.body.sign_type === 'sign_in' ? next() : next('route')
+},
 (request, response, next) => {
   user_model.find({ 'name': request.body.user }).then( user => {
-   user.length > 0 ? 
-     next():
-     next( new Error('No user with the given username was found: please sign up' ) );
+    return user.length > 0 ? 
+      next():
+      next( new Error('No user with the given username was found: please sign up' ) );
   });
 }, 
 function send_authentication_options( request, response) {
@@ -119,11 +126,13 @@ function send_authentication_options( request, response) {
           public_key: {
           allow_credentials: [ {
             id: user.id,
+            transports: user.credential_record.transports,
             type: user.credential_record.type 
           } ],
           user: {
             name: user.name
           },
+          rpId: server_configuration.host,
           timeout: 60000,
           user_verification: 'required',
           challenge: Buffer.from(challenge).toString('base64') 
@@ -142,7 +151,7 @@ function check_client_data(type, request, response, next ) {
   const client_data = request.body.authenticator_response.client_data
   const client_data_JSON = JSON.parse( client_data.toString('utf8') );
   if( client_data_JSON.type !== type ){ 
-    next( failure_error() );
+    return next( failure_error() );
   }
 
   const issued_challenge = issued_challenges.splice(
@@ -150,11 +159,11 @@ function check_client_data(type, request, response, next ) {
     1
   ).reduce( () => {} );
   if(issued_challenge.challenge !== client_data_JSON.challenge){
-    next( failure_error() );
+    return next( failure_error() );
   }
 
   if( client_data_JSON.origin !== server_configuration.serialize()){
-    next( failure_error() );
+    return next( failure_error() );
   }
   next();
 }
@@ -166,7 +175,7 @@ function check_hash(property_chain, request, response, next) {
     .update( server_configuration.host )
     .digest(); 
   if( hash.compare( data, 0, 32 ) ){
-    next( failure_error() );
+    return next( failure_error() );
   }
   next();
 }
@@ -208,14 +217,14 @@ function allow_access( request, response ){
     `user=${session.user};Secure; HttpOnly; Path=/; SameSite=Strict`, 
   ]);
   user_model.findOne({'name': request.body.user}, '-_id avatar discussions')
-    .populate('discussions')
+    .populate('discussions', '-_id users')
     .then( user => {console.log(user);response.send(user);}); 
 }
 
 function failure_error(){
   return new Error('Something went wrong with the connection procedure: please try again later')
 }
-function support_error(){
+function supported_error(){
  return new Error('The device used to connect is not currently supported by invoice'); 
 }
 
@@ -251,15 +260,9 @@ const registration_ceremony = [
   function check_flags( request, response, next ){
     const attestation = request.body.authenticator_response.attestation;
     //TODO: arguably, unsupported not failure ?
-    if( !attestation.flags.user_presence ){
-      next( failure_error() )
-    }
-    if( !attestation.flags.user_verification ){
-      next( failure_error() )
-    }
-    if( !attestation.flags.credential_data ){
-      next( failure_error() )
-    }
+    if( !attestation.flags.user_presence ){return next( failure_error() );}
+    if( !attestation.flags.user_verification ){return next( failure_error() );}
+    if( !attestation.flags.credential_data ){return next( failure_error() );}
     next();
   },
   extract_signature_count.bind(null, {
@@ -274,7 +277,7 @@ const registration_ceremony = [
       id_length: credential_data.readUint16BE( 16 ),
     };
     if( attestation.credential_data.id_length > 1023 ){
-      next( failure_error() )
+      return next( failure_error() )
     }
     attestation.credential_data.id = credential_data.subarray(
       18, 
@@ -296,16 +299,20 @@ const registration_ceremony = [
       next( failure_error() )
     );
   },
+  function( request, response, next ){ console.log('b_check_attestation'); next(); },
   function check_attestation( request, response, next ) {
     const attestation = request.body.authenticator_response.attestation;
+    console.log(`proposed alg: ${attestation.credential_data.public_key.get(3)}`);
     if( !key_parameters.some( entry => attestation.credential_data.public_key.get(3) === entry.alg ) ){
-      next( supported_error() );
+      return next( supported_error() );
     }
 
-    const formats = [ 'packed' ];
+    const formats = [ 'packed', 'none' ];
+    console.log(`attestion format: ${attestation.fmt}`);
     if( !formats.some( format => attestation.fmt === format ) ){
-      next( supported_error() );
+      return next( supported_error() );
     }
+    console.log(`${attestation.attStmt}`);
 
     next();
   }, 
@@ -325,7 +332,7 @@ const registration_ceremony = [
   function verification_procedure( request, response, next) {
     const attestation = request.body.authenticator_response.attestation;
     if( attestation.credential_data.public_key.get(3) !== attestation.attStmt.alg ){
-      next( failure_error() )
+      return next( failure_error() )
     }
     
     const hash = crypto_m.createHash('sha256')
@@ -337,17 +344,18 @@ const registration_ceremony = [
                attestation.attStmt.sig
              ); 
     if( !valid_signature ){
-      next( failure_error() )
+      return next( failure_error() )
     }
 
     attestation.type= 'self';
 
     next();
   },
+  function( request, response, next ){ console.log('b_check_sigtrust'); next(); },
   function check_signature_trustworthiness( request, response, next ){
     const attestation = request.body.authenticator_response.attestation;
     if( attestation.type !== 'self' ){
-      next( supported_error() );
+      return next( supported_error() );
     }
     next();
   },
@@ -397,7 +405,7 @@ const authentication_ceremony = [
     user_model.findOne( {'name': request.body.user} ).populate('credential_record')
       .then( user => {
         if( user.id !== request.body.raw_id ){
-          next( failure_error() )
+          return next( failure_error() )
         }
         request.body.credential_record = user.credential_record;
         next();
@@ -412,12 +420,8 @@ const authentication_ceremony = [
   }),
   function check_flags( request, response, next ){
     const authenticator_response = request.body.authenticator_response;
-    if( !authenticator_response.flags.user_presence ){
-      next( failure_error() )
-    }
-    if( !authenticator_response.flags.user_verification ){
-      next( failure_error() )
-    }
+    if( !authenticator_response.flags.user_presence ){return next( failure_error() );}
+    if( !authenticator_response.flags.user_verification ){return next( failure_error() );}
     next();
   },
   function signature_validation( request, response, next) {
@@ -432,7 +436,7 @@ const authentication_ceremony = [
                      authenticator_response.signature
                    ); 
     if( !valid_signature ){
-      next( failure_error() )
+      return next( failure_error() )
     }
     next();
   },
@@ -443,7 +447,7 @@ const authentication_ceremony = [
       (signature_count != 0 || record.signature_count != 0) &&
       signature_count <= record.signature_count 
     ){
-      next( failure_error() )
+      return next( failure_error() )
     }
     next();
   },
