@@ -230,6 +230,7 @@ function supported_error(){
 
 const registration_ceremony = [
   express.json(),
+  function( request, response, next ){ console.log('a:express.json()'); next(); },
 //  function( request, response, next ){ console.log(request.body); next(); },
   function decode_response( request, response, next ) { 
     request.body.authenticator_response.attestation = 
@@ -238,7 +239,9 @@ const registration_ceremony = [
       Buffer.from( request.body.authenticator_response.client_data, 'base64');
     next()
   },
+  function( request, response, next ){ console.log('a:decode_response'); next(); },
   check_client_data.bind(null, 'webauthn.create'),
+  function( request, response, next ){ console.log('a:check_client_response'); next(); },
   function decode_attestation( request, response, next ) {
     const attestation = request.body.authenticator_response.attestation;
     cbor_m.decodeFirst(attestation).then( attestation => {
@@ -248,7 +251,9 @@ const registration_ceremony = [
       next( failure_error() )
     );
   },    
+  function( request, response, next ){ console.log('a:decode_attestation'); next(); },
   check_hash.bind(null, ['attestation','authData']),
+  function( request, response, next ){ console.log('a:check_hash'); next(); },
   extract_flags.bind(
     null, 
     {
@@ -257,6 +262,7 @@ const registration_ceremony = [
       save_point: 'flags'
     }
   ),
+  function( request, response, next ){ console.log('a:extract_flags'); next(); },
   function check_flags( request, response, next ){
     const attestation = request.body.authenticator_response.attestation;
     //TODO: arguably, unsupported not failure ?
@@ -265,11 +271,13 @@ const registration_ceremony = [
     if( !attestation.flags.credential_data ){return next( failure_error() );}
     next();
   },
+  function( request, response, next ){ console.log('a:check_flags'); next(); },
   extract_signature_count.bind(null, {
     extraction_chain: ['attestation', 'authData'],
     save_chain: ['attestation'],
     save_point: 'signature_count' 
   }),
+  function( request, response, next ){ console.log('a:extract_signature_count'); next(); },
   function extract_and_check_id( request, response, next ){
     const attestation = request.body.authenticator_response.attestation;
     const credential_data = attestation.authData.subarray(37);
@@ -285,6 +293,7 @@ const registration_ceremony = [
     );
     next();
   },
+  function( request, response, next ){ console.log('a:extract_id'); next(); },
   function extract_public_key_and_extensions( request, response, next){
     const attestation = request.body.authenticator_response.attestation;
     const credential_data = attestation.authData.subarray(37);
@@ -299,23 +308,21 @@ const registration_ceremony = [
       next( failure_error() )
     );
   },
-  function( request, response, next ){ console.log('b_check_attestation'); next(); },
+  function( request, response, next ){ console.log('a:extract_public_key'); next(); },
   function check_attestation( request, response, next ) {
     const attestation = request.body.authenticator_response.attestation;
-    console.log(`proposed alg: ${attestation.credential_data.public_key.get(3)}`);
     if( !key_parameters.some( entry => attestation.credential_data.public_key.get(3) === entry.alg ) ){
       return next( supported_error() );
     }
 
-    const formats = [ 'packed', 'none' ];
-    console.log(`attestion format: ${attestation.fmt}`);
+    const formats = [ 'packed' ];
     if( !formats.some( format => attestation.fmt === format ) ){
       return next( supported_error() );
     }
-    console.log(`${attestation.attStmt}`);
 
     next();
   }, 
+  function( request, response, next ){ console.log('a:check_attestation'); next(); },
   function register_key_jwk( request, response, next ) {
     const attestation = request.body.authenticator_response.attestation;
     //TODO: algorithm based
@@ -329,6 +336,7 @@ const registration_ceremony = [
     };
     next();
   },
+  function( request, response, next ){ console.log('a:register_key'); next(); },
   function verification_procedure( request, response, next) {
     const attestation = request.body.authenticator_response.attestation;
     if( attestation.credential_data.public_key.get(3) !== attestation.attStmt.alg ){
@@ -351,7 +359,7 @@ const registration_ceremony = [
 
     next();
   },
-  function( request, response, next ){ console.log('b_check_sigtrust'); next(); },
+  function( request, response, next ){ console.log('a:verification_procedure'); next(); },
   function check_signature_trustworthiness( request, response, next ){
     const attestation = request.body.authenticator_response.attestation;
     if( attestation.type !== 'self' ){
@@ -365,6 +373,7 @@ const registration_ceremony = [
 //    }
 //    next();
 //  },
+  function( request, response, next ){ console.log('a:check_sigtrust'); next(); },
   function register_user( request, response, next ){
     const user = new user_model({
       name: request.body.user,
@@ -386,6 +395,7 @@ const registration_ceremony = [
       .then( () => next() )
       .catch(console.error); 
   },
+  function( request, response, next ){ console.log('a:register_user'); next(); },
   allow_access
 ];
 
