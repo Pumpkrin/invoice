@@ -35,7 +35,8 @@ const options = process.env.HOST ? {} : {
   key: fs_m.readFileSync('./localhost-key.pem'),
   cert: fs_m.readFileSync('./localhost.pem')
 };
+console.log(options);
 
 process.env.HOST ? 
-  https_m.createServer(options, app).listen(port):
-  app.listen(port)
+  app.listen(port):
+  https_m.createServer(options, app).listen(port);
