@@ -14,7 +14,8 @@ app.disable('etag').disable('x-powered-by');
 //TODO: add helmet
 
 const mongoose_m = require("mongoose");
-const mongo_db = 'mongodb://localhost:27017/invoice';
+const db_url_local = 'mongodb://localhost:27017/invoice';
+const mongo_db = process.env.MONGODB_URI || db_url_local;
 mongoose_m.connect( mongo_db );
 const database = mongoose_m.connection;
 database.on( 'error', console.error.bind( console, "MongoDB connection error: ") );
