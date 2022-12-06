@@ -33,6 +33,8 @@ app.use('/discussion', discussion_router);
 const https_m = require('node:https');
 const fs_m = require('node:fs');
 const port = process.env.PORT || 3000;
+console.log(port);
+console.log(process.env.HOST);
 app.set('host', process.env.HOST || 'localhost');
 app.set('port', port);
 
@@ -40,6 +42,7 @@ const options = process.env.HOST ? {} : {
   key: fs_m.readFileSync('./localhost-key.pem'),
   cert: fs_m.readFileSync('./localhost.pem')
 };
+console.log(options);
 
 app.use(logger_m('dev'));
 
