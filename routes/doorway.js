@@ -165,7 +165,7 @@ function check_client_data(type, request, response, next ) {
     return next( failure_error() );
   }
   
-  console.log(`origin: ${client_data_JSON.origing}`);
+  console.log(`origin: ${client_data_JSON.origin}`);
   console.log(`comparison: ${server_configuration.serialize()}`);
   if( client_data_JSON.origin !== server_configuration.serialize()){
     return next( failure_error() );
