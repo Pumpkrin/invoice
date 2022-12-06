@@ -8,7 +8,7 @@ avatar-icon{
 }
 
 avatar-icon > svg {
-  fill: var(--contrasting-color);
+  fill: currentcolor;
   inline-size: var(--size);
   block-size: var(--size);
   
