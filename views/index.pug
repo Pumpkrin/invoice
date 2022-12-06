@@ -17,9 +17,19 @@ block content
             input.aesthetics_interaction.aesthetics_icon.aesthetics_selectable.flow_center(type='radio', name='sign_type', value='sign_in',checked) 
   dialog(data-type='discussion_dialog')
     div.aesthetics_pannel.flow_flex_column(data-type='discussion')
+      avatar-icon.flow_avatar.flow_center.aesthetics_pannel.flow_absolute.aesthetics_circular
+      span.flow_absolute
+      button.flow_center.aesthetics_icon.aesthetics_interaction.flow_absolute.aesthetics_circular(data-type='return') 
+        svg(viewBox='0 0 7 5')
+          path(d='M3,1 l-2,1l2,1m-2,-1h4q1,0 1,1v1', fill='none')
+      button.aesthetics_icon.aesthetics_interaction.flow_absolute.aesthetics_circular(data-type='retrieve_discussion') 
+        svg(viewBox='0 0 10 10')
+          path(d='M5,1v5l-1,-2m1,2l1,-2', fill='none')
+          path(d='M1,5h1v2h6v-2h1v2q0,1 -1,1h-6q-1,0-1,-1z')
       div(data-type='messages')
       div.flow_flex_column(data-type='replay_track_list')
       div(data-type='controls')
+        button.aesthetics_icon.aesthetics_interaction(is='recorder-controller', data-states='microphone,pause', data-type='recorder_controller') 
   div.aesthetics_pannel.flow_flex_column(data-type='home')
     h1 Welcome
     avatar-icon.flow_avatar.flow_center.aesthetics_pannel
