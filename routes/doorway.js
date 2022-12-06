@@ -17,7 +17,8 @@ const server_configuration = {
   host: process.env.HOST ? 'invoice-production-4118.up.railway.app' : 'localhost',
   port: process.env.PORT ?? 3000,
   serialize(){ 
-    return this.scheme + '://' + this.host + ':' + this.port;
+//    return this.scheme + '://' + this.host + ':' + this.port;
+    return this.scheme + '://' + this.host;
   }
 };
 
