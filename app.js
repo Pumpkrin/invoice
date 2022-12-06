@@ -32,8 +32,8 @@ app.set('host', process.env.HOST || 'localhost');
 app.set('port', port);
 
 const options = {
-  key: fs_m.readFileSync('./localhost-key.pem'),
-  cert: fs_m.readFileSync('./localhost.pem')
+//  key: fs_m.readFileSync('./localhost-key.pem'),
+//  cert: fs_m.readFileSync('./localhost.pem')
 };
 
 app.use(logger_m('dev'));
