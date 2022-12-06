@@ -150,6 +150,7 @@ function apply_property_chain( target, property_chain ) {
 function check_client_data(type, request, response, next ) {
   const client_data = request.body.authenticator_response.client_data
   const client_data_JSON = JSON.parse( client_data.toString('utf8') );
+  console.log(`data_type check: ${client_data_JSON.type} (received) -> ${type} (expected)`);
   if( client_data_JSON.type !== type ){ 
     return next( failure_error() );
   }
@@ -158,10 +159,14 @@ function check_client_data(type, request, response, next ) {
     issued_challenges.findIndex( entry => entry.user === body.user ),
     1
   ).reduce( () => {} );
+  console.log(`issued challenge: ${issued_challenge}`)
+  console.log(`received challenge: ${client_data_JSON.challenge}`)
   if(issued_challenge.challenge !== client_data_JSON.challenge){
     return next( failure_error() );
   }
-
+  
+  console.log(`origin: ${client_data_JSON.origing}`);
+  console.log(`comparison: ${server_configuration.serialize()}`);
   if( client_data_JSON.origin !== server_configuration.serialize()){
     return next( failure_error() );
   }
