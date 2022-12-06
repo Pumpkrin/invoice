@@ -12,7 +12,24 @@ input[type=range]:focus{ outline: none }
 [data-type='discussion']{
   block-size: 600px;
   gap: 10px;
+  position: relative;
+  padding-block-start:75px !important;
 }
+[data-type='discussion']> avatar-icon{
+  inset-block-start:-1rem;
+  border-radius: 50%;
+}
+[data-type='discussion']> button{
+  --block_size_icon: 30px;
+  --inline_size_icon: 30px;
+  --block_size_icon_content: 18px;
+  --inline_size_icon_content: 18px;
+  inset-block-start:1rem;
+  transform:translateX(var(--offset));
+}
+[data-type='discussion']> button:nth-of-type(1){--offset: -3rem;}
+[data-type='discussion']> button:nth-of-type(2){--offset: 3rem;}
+[data-type='discussion']> span{transform:translateY(-2rem);}
 
 [data-type='messages'] {
   display:flex;
@@ -22,7 +39,7 @@ input[type=range]:focus{ outline: none }
   gap: 3px;
   overflow-y: scroll;
 
-  flex: 1 0 auto;
+  flex: 1 1 auto;
   inline-size: 300px;
   block-size: 450px;
   padding: 2px;
@@ -30,10 +47,6 @@ input[type=range]:focus{ outline: none }
     var(--main-color-r),
     var(--main-color-g),
     var(--main-color-b), 0.43);
-  transition: flex-shrink 300ms;
-}
-.shrunk {
-  flex-shrink: 1;
 }
 
 [data-type='replay_track_list']{
@@ -61,8 +74,8 @@ input[type=range]:focus{ outline: none }
 
 /*------------------------message-track--------------------------*/
 message-track{
-  --block_size_icon: 24px;
-  --inline_size_icon: 24px;
+  --block_size_icon: 22px;
+  --inline_size_icon: 22px;
   inline-size: 70%;
   position: relative;
   --inline_offset: 0;
@@ -75,11 +88,15 @@ message-track[data-state='active'], message-track:has(input:checked){
 message-track[data-status='unselectable']{
   --inline_offset: 0;
 }
-message-track.user_authored{
+message-track.self_authored{
   align-self:end;
   flex-direction: row-reverse;
 }
+message-track.self_authored[data-state='active']{
+  --inline_offset: 0;
+}
 
+message-track > button{ padding: 1px; }
 message-track > input[type='checkbox'] {
   -webkit-appearance: none;
   appearance: none;
@@ -119,8 +136,11 @@ message-track[data-state='active']:not([data-status='unselectable']) > input[typ
 message-track:not([data-status='unselectable']) > input[type='checkbox']:checked {
   cursor: pointer;
   pointer-events: auto;
-  --switch:1;
-  --inline_position: calc( -1 * var(--inline_offset)) ;
+  --switch:1 !important;
+  --inline_position: calc( -1 * var(--inline_offset)) !important ;
+}
+message-track[data-state='active'].self_authored > input[type='checkbox']{
+  --switch:0 !important;
 }
 
 message-track > [data-type='sound_track'] {
@@ -128,6 +148,7 @@ message-track > [data-type='sound_track'] {
   --block_size_icon_content: 24px;
   position:relative;
   color: var(--main-color);
+  --gap:0px;
 }
 message-track > [data-type='sound_track'] > input{
   position:absolute;
@@ -174,22 +195,25 @@ message-track > [data-type=sound_track] > svg{
 }
 
 message-track > [data-type='timeline']{
+  pointer-events:none;
   font-size: 0.7rem;
   color: var(--contrasting-color);
   position:absolute;
   inset-inline-end:0%;
+  inline-size: fit-content;
 }
-message-track.user_authored > [data-type='timeline']{
-  inset-inline-start:0;
+message-track.self_authored > [data-type='timeline']{
+  inset-inline-start:0%;
 }
 message-track:hover > [data-type='timeline'],
 message-track[data-state='active'] > [data-type='timeline']{
-  --switch:1;
-  --inline_position: 120%;
+  --switch:1 !important;
+  --inline_position: 120% !important;
 }
-message-track.user_authored[data-state='active'] > [data-type='timeline']{
-  --switch:1;
-  --inline_position: -120%;
+message-track.self_authored:hover > [data-type='timeline'],
+message-track.self_authored[data-state='active'] > [data-type='timeline']{
+  --switch:1 !important;
+  --inline_position: -120% !important;
 }
 
 
@@ -199,12 +223,15 @@ replay-track{
   animation: pull-in ease 300ms ;
   font-family: inherit;
   font-size: inherit;
+  border-radius: 5px;
 }
 
 replay-track:last-child:not(:first-child)[data-status='incomplete']{
   border-block-start: 2px solid rgba(var(--main-color) / 0.6);
   padding-block-start: 3px;
 }
+
+replay-track > button{ border-radius: 5px; }
 
 /*------------------------controls--------------------------*/
 [data-type='controls']{
@@ -246,4 +273,4 @@ svg {
   fill: currentcolor;
 }
 
-}/*@layer button*/
+}/*@layer discussion*/

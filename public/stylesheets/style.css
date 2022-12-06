@@ -122,6 +122,7 @@
   display: grid;
   place-items: center;
 }
+.flow_absolute{position:absolute}
 
 
 
@@ -172,11 +173,13 @@ body {
       var(--main-color-g),
       var(--main-color-b), 0.43);
 }
+.aesthetics_circular{border-radius: 50%;}
 
 dialog{
   border: none;
   background: transparent;
   padding: 0;
+  overflow: visible;
 }
 dialog::backdrop{
   background: hsl( 0 0 10% / 0.5);
@@ -197,14 +200,14 @@ input[type='text']::placeholder{
     var(--main-color-b), 0.7);
   text-align: center;
 }
-dialog [data-type='connection_error']{
+[data-type*='error']{
   color: rgba(
     var(--contrasting-color-r),
     var(--contrasting-color-g), 
     var(--contrasting-color-b), 0.7);
   text-align: center;
   inline-size: min(100%, 20rem);
-  font-size: 0.8rem;
+  font-size: 0.7rem;
 }
 dialog input[type='radio']{
   --webkit-appearance: none;
@@ -259,13 +262,22 @@ dialog [data-type='request_connection'], [data-type='home'] {
   inset-inline-start: 78%;
 }
 [data-type='discussions'] {
+  flex: none;
   display:grid;
-  grid-template-columns: repeat(4, 80px);
-  grid-template-rows: repeat(3, 100px);
+  inline-size:calc(3*70px + 4*5px);
+  block-size:calc(3*80px + 3*5px);
+  grid-template-columns: repeat(3, 70px);
+  grid-template-rows: repeat(3, 80px);
+  grid-auto-rows: 80px;
   gap: 5px;
   padding: 5px;
   overflow-y: scroll;
   overflow-x: hidden;
+}
+[data-type='discussions'] > discussion-link {
+  border-radius: 10px;
+  --gap: 3px;
+  font-size: 0.6rem;
 }
 /*div{
   outline: 1px solid red;
