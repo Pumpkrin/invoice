@@ -24,7 +24,7 @@ app.set('views', path_m.join(__dirname, 'views'));
 app.set('view engine', 'pug');
 
 app.use(express_m.static(path_m.join(__dirname, 'public')));
-//app.use('/', index_router);
+app.use('/', index_router);
 //app.use('/doorway', doorway_router);
 //app.use('/discussion', discussion_router);
 
@@ -41,9 +41,6 @@ const options = process.env.HOST ? {} : {
 
 app.use(logger_m('dev'));
 
-app.get('/', (request, response) => {
-  response.send("Hello World") 
-});
 app.listen(port)
 //const server = https_m.createServer(options, app);
 //server.listen(port);
