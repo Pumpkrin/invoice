@@ -4,6 +4,14 @@ let registered_sessions = [];
 //TODO&REFLECT: what if user reload page -> session wont be valid anymore, should either clear or return old session but reinitialize it 
 let manager = { 
 add_session(user){
+  const registered_session = registered_sessions.find( session => session.user === user );
+  if(registered_session){
+    clearInterval(registered_session.timeout);
+    registered_sessions.splice(
+      registered_sessions.findIndex( session => registered_session === session ),
+      1
+    ); 
+  }
   const session = {
     id: crypto_m.randomBytes(16).toString('base64'),
     user: user,
@@ -13,7 +21,7 @@ add_session(user){
       registered_sessions.findIndex( registered_session => registered_session === session ),
       1
     ); 
-  }, 20000 );
+  }, 20 * 60 * 1000 );
   registered_sessions.push( session );
   console.log(registered_sessions);
   return session;
@@ -39,6 +47,7 @@ function extract_session_parameters(request, response, next){
   next();
  },
 function find_session( request, response, next ){  
+  console.log('find_session');
   console.log( registered_sessions );
   const session = registered_sessions.find( session => session.user === request.user );
   console.log( session );
@@ -52,15 +61,19 @@ function find_session( request, response, next ){
   next();
 },
 function reset_session( request, response, next){
+  console.log('reset_session');
+  console.log(registered_sessions);
   const session = registered_sessions.find( session => session.user === request.user );
   clearTimeout( session.timeout );
+  console.log(registered_sessions);
   const index = registered_sessions.findIndex( session => session.user === request.user );
   session.timeout = setTimeout( () => {
     registered_sessions.splice(
       index,
       1
     ); 
-  }, 20000 );
+  }, 20 * 60 * 1000 );
+  console.log(registered_sessions);
   next();  
 }]
 };
