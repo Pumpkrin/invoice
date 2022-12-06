@@ -1,5 +1,5 @@
-//import * as discussion_m from './modules/discussion.mjs';
-import * as sign_m from './modules/sign.mjs';
+import './modules/sign.js';
+import './modules/discussion.js';
 
 const dialog = document.querySelector('dialog');
 dialog.addEventListener('cancel', event => event.preventDefault() ); 
