@@ -5,7 +5,11 @@ const index_router = require('./routes/index');
 const discussion_router = require('./routes/discussion');
 const doorway_router = require('./routes/doorway');
 //const update_sender_m = require('./update_sender');
+const helmet = require('helmet');
+const compression = require('compression');
 const app = express_m();
+app.use(helmet());
+app.use(compression());
 app.disable('etag').disable('x-powered-by');
 //TODO: add helmet
 
@@ -31,9 +35,9 @@ const port = process.env.PORT || 3000;
 app.set('host', process.env.HOST || 'localhost');
 app.set('port', port);
 
-const options = {
-//  key: fs_m.readFileSync('./localhost-key.pem'),
-//  cert: fs_m.readFileSync('./localhost.pem')
+const options = process.env.HOST ? {} : {
+  key: fs_m.readFileSync('./localhost-key.pem'),
+  cert: fs_m.readFileSync('./localhost.pem')
 };
 
 app.use(logger_m('dev'));
