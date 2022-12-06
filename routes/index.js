@@ -11,8 +11,9 @@ const discussion_model = require('../models/discussion');
 router.get('/', function(req, res, next) {
   res.render('index', { title: 'invoice' });
 });
-router.get('/users/$id', function(request, response, next) {
-  user_model.findOne({'name': request.params.id}, '-_id name avatar')
+router.get('/users/:id', function(request, response, next) {
+  console.log( `got request for ${request.params.id}`);
+  user_model.findOne({'name': request.params.id}, '-_id avatar')
     .then( user => {response.send(user)}); 
 });
 router.post('/add_contact', [
