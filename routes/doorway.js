@@ -14,8 +14,8 @@ const {generate_avatar} = require('../misc/avatar');
 const {credential_record_model, user_model} = require('../models/user');
 const server_configuration = {
   scheme: 'https',
-  host: 'localhost',
-  port: 3000,
+  host: process.env.HOST ? 'invoice-production-4118.up.railway.app' : 'localhost',
+  port: process.env.PORT ?? 3000,
   serialize(){ 
     return this.scheme + '://' + this.host + ':' + this.port;
   }
