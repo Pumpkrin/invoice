@@ -24,17 +24,13 @@ app.set('views', path_m.join(__dirname, 'views'));
 app.set('view engine', 'pug');
 
 app.use(express_m.static(path_m.join(__dirname, 'public')));
-app.use('/', index_router);
-app.use('/doorway', doorway_router);
-app.use('/discussion', discussion_router);
-
-//app.use('/update_sender', update_sender_m ); 
+//app.use('/', index_router);
+//app.use('/doorway', doorway_router);
+//app.use('/discussion', discussion_router);
 
 const https_m = require('node:https');
 const fs_m = require('node:fs');
 const port = process.env.PORT || 3000;
-console.log(port);
-console.log(process.env.HOST);
 app.set('host', process.env.HOST || 'localhost');
 app.set('port', port);
 
@@ -42,9 +38,12 @@ const options = process.env.HOST ? {} : {
   key: fs_m.readFileSync('./localhost-key.pem'),
   cert: fs_m.readFileSync('./localhost.pem')
 };
-console.log(options);
 
 app.use(logger_m('dev'));
 
-const server = https_m.createServer(options, app);
-server.listen(port);
+app.get('/', (request, response) => {
+  response.send("Hello World") 
+});
+app.listen(port)
+//const server = https_m.createServer(options, app);
+//server.listen(port);
