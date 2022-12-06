@@ -27,7 +27,8 @@ app.use('/discussion', discussion_router);
 
 const https_m = require('node:https');
 const fs_m = require('node:fs');
-const port = '3000';
+const port = process.env.PORT || 3000;
+app.set('host', process.env.HOST || 'localhost');
 app.set('port', port);
 
 const options = {
