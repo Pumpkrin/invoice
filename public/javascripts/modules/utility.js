@@ -195,66 +195,9 @@ function update_display(element, duration){
   if(Number.isFinite(duration)){element.textContent = format_duration( duration );}
 }
 
-function encode_base64( buffer ) {
-  return btoa( String.fromCharCode(... new Uint8Array(buffer)));
-}
-
-const application_formatters = [
-  { 
-    format: 'attestation',
-    user(target, property){ return {property: 'user', value: target.user}; },
-    type(target, property){ return {property: 'type', value: target.type}; },
-    rawId(target, property){ 
-      return { property: 'raw_id', value: encode_base64(target[property]) };
-    },
-    response(target, property){ 
-      return {property: 'authenticator_response', value: {
-        transports: target[property].getTransports(),
-        client_data: encode_base64( target[property].clientDataJSON ),
-        attestation: encode_base64( target[property].attestationObject )
-      }};
-    }
-  },
-  {
-    format: 'assertion',
-    user(target, property){ return {property: 'user', value: target.user}; },
-    rawId(target, property){ 
-      return { property: 'raw_id', value: encode_base64(target[property]) };
-    },
-    response(target, property){ 
-      return {property: 'authenticator_response', value: {
-        client_data: encode_base64( target[property].clientDataJSON ),
-        data: encode_base64( target[property].authenticatorData ),
-        signature: encode_base64( target[property].signature ),
-        user_handle: encode_base64( target[property].userHandle )
-      }};
-    }
-  }
-];
-
-function apply_format( target, format ) {
-  const formatter = application_formatters.find( formatter => formatter.format === format );
-  const object = {};
-  for( const property in target ){
-    if( property in formatter ){ 
-      const result = formatter[property]( target, property );  
-      object[ result.property ] = result.value;
-    }
-  }
-  return object;
-}
-
-async function fulfillment_chain_a( promise, chain ) {
-  let result = await promise;
-  for( const fn of chain ){
-    result = await fn( result );
-  }
-  return result;
-}
-
 function reset_session( response ){
   if(response.status !== 401){ throw response; }
   document.querySelector('[data-type="connection_dialog"]').showModal();
 }
 
-export { togglable_button, playable_track_c, zip, update_display, apply_format, fulfillment_chain_a, reset_session };
+export { togglable_button, playable_track_c, zip, update_display, reset_session };

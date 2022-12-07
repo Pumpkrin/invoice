@@ -17,8 +17,9 @@ const server_configuration = {
   host: process.env.HOST ? 'invoice-production-4118.up.railway.app' : 'localhost',
   port: process.env.PORT ?? 3000,
   serialize(){ 
-//    return this.scheme + '://' + this.host + ':' + this.port;
-    return this.scheme + '://' + this.host;
+    return process.env.PORT ?
+      this.scheme + '://' + this.host :
+      this.scheme + '://' + this.host + ':' + this.port;
   }
 };
 
@@ -160,7 +161,7 @@ function check_client_data(type, request, response, next ) {
     issued_challenges.findIndex( entry => entry.user === body.user ),
     1
   ).reduce( () => {} );
-  console.log(`issued challenge: ${issued_challenge}`)
+  console.log(`issued challenge: ${issued_challenge.challenge}`)
   console.log(`received challenge: ${client_data_JSON.challenge}`)
   if(issued_challenge.challenge !== client_data_JSON.challenge){
     return next( failure_error() );
