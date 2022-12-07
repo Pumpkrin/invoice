@@ -125,7 +125,7 @@ function send_authentication_options( request, response) {
       const options = {
         required_action: 'authentication',
           public_key: {
-          allow_credentials: [ {
+          allowCredentials: [ {
             id: user.id,
             transports: user.credential_record.transports,
             type: user.credential_record.type 
@@ -135,7 +135,7 @@ function send_authentication_options( request, response) {
           },
           rpId: server_configuration.host,
           timeout: 60000,
-          user_verification: 'required',
+          userVerification: 'required',
           challenge: Buffer.from(challenge).toString('base64') 
         }
       };

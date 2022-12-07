@@ -84,12 +84,40 @@ form.addEventListener(
 );
 
 
+
+function retrieve_buffer( input ){
+  return Uint8Array.from(atob(input),character => character.charCodeAt(0));
+}
+
+function encode_base64( buffer ) {
+  return btoa( String.fromCharCode(... new Uint8Array(buffer)));
+}
+
+const formatters = [{
+  format: 'create_credentials',
+  properties: ['challenge', 'user'],  
+  challenge(key){ key.challenge = retrieve_buffer( key.challenge ); },
+  user(key){ 
+    key.user.id = new ArrayBuffer( 16 ); 
+    key.user.displayName = key.user.name;
+  },
+},{
+  format: 'get_credentials', 
+  properties: ['challenge', 'allow_credentials'],
+  id(key){ key.allowCredentials.id = retrieve_buffer( key.allowCredentials.id );}
+  challenge(key){ key.challenge = retrieve_buffer( key.challenge );},
+}];
+function format_fields( key, format ){
+  const formatter = formatters.find( formatter => formatter.format === format );
+  formatter.properties.forEach( property => formatter[property](key) );
+}
+
 async function create_credentials_a( {public_key} ){
-  return navigator.credentials.create( { publicKey: utility_m.proxy_format(public_key, 'create_credentials') });
+  return navigator.credentials.create( {publicKey: format_fields(public_key, 'create_credentials') });
 }
 
 async function get_credentials_a( {public_key} ){
-  return navigator.credentials.get( {publicKey: utility_m.proxy_format( public_key, 'get_credentials') } );
+  return navigator.credentials.get( {publicKey: format_fields( public_key, 'get_credentials') } );
 }
 
 

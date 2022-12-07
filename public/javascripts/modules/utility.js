@@ -195,50 +195,9 @@ function update_display(element, duration){
   if(Number.isFinite(duration)){element.textContent = format_duration( duration );}
 }
 
-function retrieve_buffer( base64_string ){
-  return Uint8Array.from(
-    atob(base64_string),
-    character => character.charCodeAt(0)
-  );
-}
-
 function encode_base64( buffer ) {
   return btoa( String.fromCharCode(... new Uint8Array(buffer)));
 }
-
-const proxy_formatters = [
-  {
-    format: 'create_credentials',
-    challenge(target, property){return retrieve_buffer( target[property] );},
-    user(target, property){ return redirect_to(
-        target.user, 
-        proxy_formatters.find( formatter => formatter.format === 'user_create_credentials' )
-    );}
-  },
-  {
-    format: 'user_create_credentials',
-    id(target, property){return new ArrayBuffer( 16 );}, 
-    displayName(target, property) {return target.name;}
-  },
-  {
-    format: 'get_credentials',
-    challenge(target, property){return retrieve_buffer( target[property] );},
-    allowCredentials(target, property){ 
-      //MAYBE: move from an array of proxies to a proxy of an array ?
-      return target.allow_credentials.map( credential => {
-        return redirect_to( 
-          credential,
-          proxy_formatters.find( formatter => formatter.format === 'registered_credentials' )
-        );
-      });
-    },
-    userVerification(target, property){ return target.user_verification; }
-  },
-  {
-    format: 'registered_credentials', 
-    id(target, property){return retrieve_buffer( target[property] );}
-  },
-];
 
 const application_formatters = [
   { 
@@ -273,25 +232,6 @@ const application_formatters = [
   }
 ];
 
-function redirect_to( target, formatter ){
-  return new Proxy(
-    target,
-    {get: proxy_format_impl.bind(null, formatter)}
-  );
-}
-
-function proxy_format_impl(formatter, target, property, receiver) {
-  console.log(property);
-  return property in formatter ?
-    formatter[property](target, property) :
-    Reflect.get( target, property, receiver );
-};
-
-function proxy_format( target, format ) {
-  const formatter = proxy_formatters.find( formatter => formatter.format === format );
-  return redirect_to( target, formatter );
-}
-
 function apply_format( target, format ) {
   const formatter = application_formatters.find( formatter => formatter.format === format );
   const object = {};
@@ -317,4 +257,4 @@ function reset_session( response ){
   document.querySelector('[data-type="connection_dialog"]').showModal();
 }
 
-export { togglable_button, playable_track_c, zip, update_display, proxy_format, apply_format, fulfillment_chain_a, reset_session };
+export { togglable_button, playable_track_c, zip, update_display, apply_format, fulfillment_chain_a, reset_session };
