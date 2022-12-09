@@ -47,6 +47,7 @@ function registration( options ){
 },
 function post_credentials( credentials ) {
   console.log(credentials);
+  console.log(credentials.response.getTransports());
   credentials.user = user;
   return fetch('./doorway/registration_ceremony', {
     method: 'post',
@@ -131,8 +132,10 @@ const formatters = [{
     return { property: 'raw_id', value: encode_base64(target[property]) };
   },
   response(target, property){ 
+    console.log(target)
+    console.log(property);
     return {property: 'authenticator_response', value: {
-      transports: target[property].getTransports(),
+      transports: target[property].getTransports() ?? ['internal'],
       client_data: encode_base64( target[property].clientDataJSON ),
       attestation: encode_base64( target[property].attestationObject )
     }};
