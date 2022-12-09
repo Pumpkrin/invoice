@@ -18,6 +18,14 @@ function () {
       })
   );
 });
+discussion_schema.method( 'update_a', 
+function (message) {
+  this.messages.push(message);
+  const message_removal = this.messages > 10 ? 
+    mongoose_m.model('message').findByIdAndDelete( this.messages.shift() ): 
+    Promise.resolve(undefined);
+  return message_removal.then( () => this.save() );
+});
 
 discussion_schema.virtual('name').get( function() {
   return `${this.users[0]}+${this.users[1]}`;
