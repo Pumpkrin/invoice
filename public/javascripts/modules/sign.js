@@ -140,7 +140,7 @@ const formatters = [{
     console.log(target)
     console.log(property);
     return {property: 'authenticator_response', value: {
-      transports: target[property].getTransports() ?? ['internal'],
+      transports: target[property].getTransports?.() ?? ['internal'],
       client_data: encode_base64( target[property].clientDataJSON ),
       attestation: encode_base64( target[property].attestationObject )
     }};
