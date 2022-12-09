@@ -5,6 +5,16 @@ html
     link(rel='stylesheet', href='/stylesheets/style.css')
     link(rel='stylesheet', href='/stylesheets/discussion.css')
     link(rel='stylesheet', href='/stylesheets/avatar.css')
-    script(src='/javascripts/script.js', type='module')
+    script.
+      const scripts = [ 
+        {src: '//unpkg.com/@ungap/custom-elements/es.js', crossorigin:true}, 
+        {src: '/javascripts/script.js', type:'module'}
+      ]
+      scripts.forEach( function(script) {
+        document.head.appendChild( Object.assign(
+          document.createElement('script'),
+          {async: false, ...script}
+        ))
+      })
   body
     block content

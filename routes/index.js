@@ -8,9 +8,12 @@ const session_id_m = require('../misc/session_id');
 const {user_model} = require('../models/user');
 const discussion_model = require('../models/discussion');
 
-router.get('/', function(req, res, next) {
-  res.render('index', { title: 'invoice' });
+router.get('/', function(request, response) {
+  const csp = `script-src 'sha256-lE/a7A/jSrvN3SMWPUql6Y4nmDzeERPOp41jTUEBqQ0=' 'strict-dynamic' https:; object-src 'none'; base-uri 'none'; media-src 'self' blob:;`;
+  response.set('Content-Security-Policy', csp);
+  response.render('index', { title: 'invoice' });
 });
+
 router.get('/users/:id', function(request, response, next) {
   console.log( `got request for ${request.params.id}`);
   user_model.findOne({'name': request.params.id}, '-_id avatar')

@@ -6,7 +6,8 @@ const doorway_router = require('./routes/doorway');
 const helmet = require('helmet');
 const compression = require('compression');
 const app = express_m();
-app.use(helmet());
+//REFLECT: CSP is set manually, and COEP blocks polyfill load for custom built-ins
+app.use(helmet({contentSecurityPolicy:false, crossOriginEmbedderPolicy:false}));
 app.use(compression());
 app.disable('etag').disable('x-powered-by');
 
