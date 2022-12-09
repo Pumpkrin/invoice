@@ -350,10 +350,12 @@ const registration_ceremony = [
   function( request, response, next ){ console.log('a:extract_public_key'); next(); },
   function check_attestation( request, response, next ) {
     const attestation = request.body.authenticator_response.attestation;
+    console.log(attestation.credential_data.public_key.get(3));
     if( !key_parameters.some( entry => attestation.credential_data.public_key.get(3) === entry.alg ) ){
       return next( supported_error() );
     }
 
+    console.log( attestation.fmt );
     const supported_format = 
       attestation_formats.find(({format}) => attestation.fmt === format ); 
     if( !supported_format ){
