@@ -217,6 +217,38 @@ function extract_signature_count(options, request, response, next){
   next();
 }
 
+const attestation_formats = [{
+  format:'packed',
+  signature_verification(request, response, next){
+    const attestation = request.body.authenticator_response.attestation;
+    if( attestation.credential_data.public_key.get(3) !== 
+        attestation.attStmt.alg ){
+      return next( failure_error() )
+    }
+    
+    const hash = crypto_m.createHash('sha256')
+      .update(request.body.authenticator_response.client_data).digest();
+    const valid_signature = crypto_m.createVerify( 'sha256' )
+             .update( Buffer.concat([attestation.authData, hash]) )
+             .verify(
+               crypto_m.createPublicKey(attestation.credential_data.jwk_key), 
+               attestation.attStmt.sig
+             ); 
+    if( !valid_signature ){
+      return next( failure_error() )
+    }
+
+    attestation.type= 'self';
+    return next();
+  }
+},{
+  format:'none',
+  signature_verification(request, response, next){
+    const attestation = request.body.authenticator_response.attestation;
+    attestation.type= 'none';
+    return next();
+  }
+}];
 function allow_access( request, response ){
   const session = session_id_m.add_session( request.body.user ); 
   response.setHeader('Set-Cookie', [
@@ -322,10 +354,12 @@ const registration_ceremony = [
       return next( supported_error() );
     }
 
-    const formats = [ 'packed' ];
-    if( !formats.some( format => attestation.fmt === format ) ){
+    const supported_format = 
+      attestation_formats.find(({format}) => attestation.fmt === format ); 
+    if( !supported_format ){
       return next( supported_error() );
     }
+    attestation.signature_verification = supported_format.signature_verification;
 
     next();
   }, 
@@ -346,32 +380,11 @@ const registration_ceremony = [
   function( request, response, next ){ console.log('a:register_key'); next(); },
   function verification_procedure( request, response, next) {
     const attestation = request.body.authenticator_response.attestation;
-    if( attestation.credential_data.public_key.get(3) !== attestation.attStmt.alg ){
-      return next( failure_error() )
-    }
-    
-    const hash = crypto_m.createHash('sha256')
-      .update(request.body.authenticator_response.client_data).digest();
-    const valid_signature = crypto_m.createVerify( 'sha256' )
-             .update( Buffer.concat([attestation.authData, hash]) )
-             .verify(
-               crypto_m.createPublicKey(attestation.credential_data.jwk_key), 
-               attestation.attStmt.sig
-             ); 
-    if( !valid_signature ){
-      return next( failure_error() )
-    }
-
-    attestation.type= 'self';
-
-    next();
+    return attestation.signature_verification( request, response, next);
   },
   function( request, response, next ){ console.log('a:verification_procedure'); next(); },
   function check_signature_trustworthiness( request, response, next ){
-    const attestation = request.body.authenticator_response.attestation;
-    if( attestation.type !== 'self' ){
-      return next( supported_error() );
-    }
+    //REFLECT: since there is no need to check for certificate, here any error would be catched before
     next();
   },
 //  function check_user_existence( request, response, next ){
