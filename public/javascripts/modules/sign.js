@@ -22,7 +22,7 @@ form.addEventListener(
 
     fulfillment_chain_a(submit_p, registration_path)
       .catch( silence_pathing )
-      .catch( error_handler );
+//      .catch( error_handler );
     fulfillment_chain_a(submit_p, authentication_path)
       .catch( silence_pathing )
       .catch( error_handler );
