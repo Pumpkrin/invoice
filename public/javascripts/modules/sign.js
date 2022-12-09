@@ -22,9 +22,11 @@ form.addEventListener(
 
     fulfillment_chain_a(submit_p, registration_path)
       .catch( silence_pathing )
+      .catch( alert_handler ) 
 //      .catch( error_handler );
     fulfillment_chain_a(submit_p, authentication_path)
       .catch( silence_pathing )
+      .catch( alert_handler ) 
 //      .catch( error_handler );
   }
 );
@@ -81,6 +83,9 @@ function error_handler( error ){
   const connection_error = document.querySelector("[data-type='connection_error']");
   connection_error.classList.remove('hidden');
   connection_error.textContent = error.message;
+}
+function alert_handler(error){
+  alert( error.message );
 }
 
 async function fulfillment_chain_a( promise, chain ) {
