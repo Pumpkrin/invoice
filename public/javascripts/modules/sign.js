@@ -49,7 +49,6 @@ function registration( options ){
 },
 function post_credentials( credentials ) {
   console.log(credentials);
-  console.log(credentials.response.getTransports());
   credentials.user = user;
   return fetch('./doorway/registration_ceremony', {
     method: 'post',
