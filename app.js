@@ -10,7 +10,7 @@ app.use(helmet());
 app.use(compression());
 app.disable('etag').disable('x-powered-by');
 
-const mongoose_m = require("mongoose");
+const mongoose_m = require('mongoose');
 const db_url_local = 'mongodb://localhost:27017/invoice';
 const mongo_db = process.env.MONGODB_URI || db_url_local;
 mongoose_m.connect( mongo_db );
