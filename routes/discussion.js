@@ -18,7 +18,9 @@ router.get('/', function(request, response, next) {
   response.setHeader('Accept-Ranges', 'bytes');
 });
 
-router.get('/:users', session_id_m.confirmation_chain, 
+router.get('/:users',
+session_id_m.extraction_chain,
+session_id_m.confirmation_chain, 
 function(request, response, next){
   const users = request.params.users.split('+');
   console.log(`confirm user in discussion: ${users}`);
@@ -61,14 +63,7 @@ function (error, request, response, next){
 });
 
 const message_upload_chain = [
-function should_not_be_here( request, response, next ){
-  const parameters = request.headers.cookie.split(';')
-    .map( parameter => parameter.trim() )
-    .map( parameter => parameter.replace(/\w+=/, '') );
-  //TODO&REFLECT: order of cookie parameters might not be guaranteed
-  request.user = parameters[0];
-  next();
-},
+session_id_m.extraction_chain,
 multer_m().array('audio'),
 function(request, response) {
   const message = new message_model({

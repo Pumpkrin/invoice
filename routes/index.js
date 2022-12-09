@@ -20,6 +20,7 @@ router.get('/users/:id', function(request, response, next) {
     .then( user => {response.send(user)}); 
 });
 router.post('/add_contact', [
+session_id_m.extraction_chain,
 session_id_m.confirmation_chain,
 multer_m().none(),
 body('contact')

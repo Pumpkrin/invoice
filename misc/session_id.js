@@ -26,7 +26,7 @@ add_session(user){
   console.log(registered_sessions);
   return session;
 }, 
-confirmation_chain : [
+extraction_chain : [
 function confirm_cookie_existence(request, response, next){
   if( !request.headers.cookie ){
     return next( Object.assign(
@@ -39,33 +39,28 @@ function confirm_cookie_existence(request, response, next){
 function extract_session_parameters(request, response, next){
   const parameters = request.headers.cookie.split(';')
     .map( parameter => parameter.trim() )
-    .map( parameter => parameter.replace(/\w+=/, '') );
-  //TODO&REFLECT: order of cookie parameters might not be guaranteed
-  [request.user, request.session_id] = parameters;
-  console.log( request.user );
-  console.log( request.session_id );
+    .forEach( parameter => {
+      const value = parameter.replace(/\w+=/,'');
+      const key = parameter.match( /\w+[^=]/ )[0]; 
+      request[key] = value;
+    })
   next();
- },
+}],
+confirmation_chain : [ 
 function find_session( request, response, next ){  
-  console.log('find_session');
-  console.log( registered_sessions );
   const session = registered_sessions.find( session => session.user === request.user );
-  console.log( session );
-  if( !session || session.id !== request.session_id ){ 
+  if( !session || session.id !== request.session ){ 
     return next( Object.assign( 
       new Error('Session was either not found or did not match'),
       {status: 401}
     ));
   }
-  request.session_id = undefined;
+  delete request.session;
   next();
 },
 function reset_session( request, response, next){
-  console.log('reset_session');
-  console.log(registered_sessions);
   const session = registered_sessions.find( session => session.user === request.user );
   clearTimeout( session.timeout );
-  console.log(registered_sessions);
   const index = registered_sessions.findIndex( session => session.user === request.user );
   session.timeout = setTimeout( () => {
     registered_sessions.splice(
@@ -73,7 +68,6 @@ function reset_session( request, response, next){
       1
     ); 
   }, 20 * 60 * 1000 );
-  console.log(registered_sessions);
   next();  
 }]
 };
