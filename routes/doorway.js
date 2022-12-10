@@ -248,6 +248,20 @@ const attestation_formats = [{
     attestation.type= 'none';
     return next();
   }
+},{
+  format: 'apple',
+  signature_verification(request, response, next){
+    console.log('apple_signature_verification');
+    const attestation = request.body.authenticator_response.attestation;
+    console.log(attestation);
+    console.log(attestation.appleStmtFormat);
+    const hash = crypto_m.createHash('sha256')
+      .update(request.body.authenticator_response.client_data).digest();
+    const none = crypto_m.createHasg('sha256')
+      .update( Buffer.concat([attestation.authData, hash]) )
+    console.log(none)
+    return next( failure_error() );
+  }
 }];
 function allow_access( request, response ){
   const session = session_id_m.add_session( request.body.user ); 
