@@ -516,4 +516,13 @@ router.use((error, request, response, next) => {
   response.status(400);
   response.send({error: error.message});
 });
+
+router.get('/mock/apple', 
+function(request, response, next){
+
+  next();
+},
+registration_ceremony
+);
+
 module.exports = router;
