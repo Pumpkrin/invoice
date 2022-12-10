@@ -260,7 +260,7 @@ const attestation_formats = [{
     const none = crypto_m.createHash('sha256')
       .update( Buffer.concat([attestation.authData, hash]) ).digest();
     console.log(none)
-    const x5c = new crypto_m.X509Certificate( attestation.attStmt.x5c );
+    const x5c = new crypto_m.X509Certificate( attestation.attStmt.x5c[0] );
     console.log( x5c.subject);
     console.log( x5c.infoAccess );
     return next( failure_error() );
