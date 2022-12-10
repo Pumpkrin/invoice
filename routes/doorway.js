@@ -257,7 +257,7 @@ const attestation_formats = [{
     console.log(attestation.appleStmtFormat);
     const hash = crypto_m.createHash('sha256')
       .update(request.body.authenticator_response.client_data).digest();
-    const none = crypto_m.createHasg('sha256')
+    const none = crypto_m.createHash('sha256')
       .update( Buffer.concat([attestation.authData, hash]) )
     console.log(none)
     return next( failure_error() );
