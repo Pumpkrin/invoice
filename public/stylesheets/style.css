@@ -215,9 +215,11 @@ dialog input[type='radio']{
   margin: 0;
 }
 
-
+dialog label {position: relative; }
 dialog label::before{
   content: '';
+  content: attr(data-display);
+  inline-size: max-content;
   color: var(--contrasting-color);
   position:absolute;
   --opacity: 0;
@@ -231,12 +233,14 @@ dialog label:has(input:checked)::before{
   content: attr(data-display);
   --opacity: 1;
 }
+
 dialog label:nth-of-type(1):has(input:checked)::before{
   --inline_position: calc(-1 * (50% + 0.5*(var(--gap) + var(--inline_size_icon))));
 }
 dialog label:nth-of-type(2):has(input:checked)::before{
   --inline_position: calc(50% + 0.5*(var(--gap) + var(--inline_size_icon)));
 }
+
 dialog [data-type='request_connection'], [data-type='home'] {
   --block_size_icon_content: 24px;
   --inline_size_icon_content: 24px;

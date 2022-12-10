@@ -2,7 +2,7 @@
 avatar-icon{
   position: relative;
   --angle: calc( 360deg / var(--counter) );
-  --size: calc( 100%/ ( var(--counter)/2 +1 ));
+  --size: calc( 100%/ (var(--counter)/2 + 1) );
   inline-size:60px;
   block-size: 60px;
 }
