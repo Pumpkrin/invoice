@@ -6,6 +6,7 @@ const { Buffer: buffer_m} = require('node:buffer');
 const {body, validationResult: validation_result} = require('express-validator');
 const multer_m = require('multer');
 const cbor_m = require('cbor');
+const asn1_m = require('@lapo/asn1js');
 const util_m = require('node:util');
 
 const session_id_m = require('../misc/session_id');
@@ -212,6 +213,11 @@ function extract_signature_count(options, request, response, next){
   next();
 }
 
+function extract_oid( certificate, oid ){
+  const asn1_structure = asn1_m.decode( certificate.raw );
+
+}
+
 const attestation_formats = [{
   format:'packed',
   signature_verification(request, response, next){
@@ -248,18 +254,22 @@ const attestation_formats = [{
   signature_verification(request, response, next){
     console.log('apple_signature_verification');
     const attestation = request.body.authenticator_response.attestation;
-    console.log(attestation);
-    console.log(attestation.attStmt);
     const hash = crypto_m.createHash('sha256')
       .update(request.body.authenticator_response.client_data).digest();
-    const none = crypto_m.createHash('sha256')
+    const expected_nonce = crypto_m.createHash('sha256')
       .update( Buffer.concat([attestation.authData, hash]) ).digest();
-    console.log(none)
-    const x5c = new crypto_m.X509Certificate( attestation.attStmt.x5c[0] );
-    console.log(x5c);
-    console.log(`JSON: ${x5c.toJSON()}`);
-    console.log(`was verified by given public key: ${x5c.verify(crypto_m.createPublicKey(attestation.credential_data.jwk_key))}`)
-    return next( failure_error() );
+    const certificate = new crypto_m.X509Certificate( attestation.attStmt.x5c[0] );
+    const retrieved_nonce = extract_oid( certificate, '1.2.840.113635.100.8.2' );
+    if( Buffer.compare( expected_nonce, retrieved_nonce ) !== 0 ){
+      console.log('nonce comparison was not successful');
+      return next( failure_error() );
+    }
+    console.log('nonce compared successfuly');
+    if( x5c.verify(crypto_m.createPublicKey(attestation.credental_data.jwk_key)) ){ 
+      console.log(`verify did not work`);
+      return next( failure_error() );
+    }
+    next();
   }
 }];
 function allow_access( request, response ){
@@ -283,7 +293,7 @@ function supported_error(){
 const registration_ceremony = [
   express.json(),
   function( request, response, next ){ console.log('a:express.json()'); next(); },
-//  function( request, response, next ){ console.log(request.body); next(); },
+  function( request, response, next ){ console.log(request.body); next(); },
   function decode_response( request, response, next ) { 
     request.body.authenticator_response.attestation = 
       Buffer.from( request.body.authenticator_response.attestation, 'base64');
