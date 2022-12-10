@@ -15,7 +15,6 @@ router.get('/', function(request, response) {
 });
 
 router.get('/users/:id', function(request, response, next) {
-  console.log( `got request for ${request.params.id}`);
   user_model.findOne({'name': request.params.id}, '-_id avatar')
     .then( user => {response.send(user)}); 
 });
@@ -65,7 +64,6 @@ function (request, response, next){
   const discussion = new discussion_model({
     users:[request.user, request.body.contact].sort()  
   });
-  console.log(discussion);
   discussion.save()
     .then( () => discussion.update_users_a() )
     .then( () => response.end() )

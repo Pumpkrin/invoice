@@ -152,7 +152,6 @@ function apply_property_chain( target, property_chain ) {
 function check_client_data(type, request, response, next ) {
   const client_data = request.body.authenticator_response.client_data
   const client_data_JSON = JSON.parse( client_data.toString('utf8') );
-  console.log(`data_type check: ${client_data_JSON.type} (received) -> ${type} (expected)`);
   if( client_data_JSON.type !== type ){ 
     return next( failure_error() );
   }
@@ -161,14 +160,10 @@ function check_client_data(type, request, response, next ) {
     issued_challenges.findIndex( entry => entry.user === body.user ),
     1
   ).reduce( () => {} );
-  console.log(`issued challenge: ${issued_challenge.challenge}`)
-  console.log(`received challenge: ${client_data_JSON.challenge}`)
   if(issued_challenge.challenge !== client_data_JSON.challenge){
     return next( failure_error() );
   }
   
-  console.log(`origin: ${client_data_JSON.origin}`);
-  console.log(`comparison: ${server_configuration.serialize()}`);
   if( client_data_JSON.origin !== server_configuration.serialize()){
     return next( failure_error() );
   }
@@ -261,8 +256,9 @@ const attestation_formats = [{
       .update( Buffer.concat([attestation.authData, hash]) ).digest();
     console.log(none)
     const x5c = new crypto_m.X509Certificate( attestation.attStmt.x5c[0] );
-    console.log( x5c.subject);
-    console.log( x5c.infoAccess );
+    console.log(x5c);
+    console.log(`JSON: ${x5c.toJSON()}`);
+    console.log(`was verified by given public key: ${x5c.verify(crypto_m.createPublicKey(attestation.credential_data.jwk_key))}`)
     return next( failure_error() );
   }
 }];
@@ -274,7 +270,7 @@ function allow_access( request, response ){
   ]);
   user_model.findOne({'name': request.body.user}, '-_id avatar discussions')
     .populate('discussions', '-_id users')
-    .then( user => {console.log(user);response.send(user);}); 
+    .then( user => response.send(user) ); 
 }
 
 function failure_error(){
@@ -367,12 +363,10 @@ const registration_ceremony = [
   function( request, response, next ){ console.log('a:extract_public_key'); next(); },
   function check_attestation( request, response, next ) {
     const attestation = request.body.authenticator_response.attestation;
-    console.log(attestation.credential_data.public_key.get(3));
     if( !key_parameters.some( entry => attestation.credential_data.public_key.get(3) === entry.alg ) ){
       return next( supported_error() );
     }
 
-    console.log( attestation.fmt );
     const supported_format = 
       attestation_formats.find(({format}) => attestation.fmt === format ); 
     if( !supported_format ){
@@ -420,7 +414,6 @@ const registration_ceremony = [
       avatar: generate_avatar(),
       discussions: []
     });
-    console.log(user);
     const record = new credential_record_model({
       type: request.body.type,
       public_key: request.body.authenticator_response.attestation.credential_data.jwk_key,

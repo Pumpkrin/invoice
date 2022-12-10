@@ -23,7 +23,6 @@ session_id_m.extraction_chain,
 session_id_m.confirmation_chain, 
 function(request, response, next){
   const users = request.params.users.split('+');
-  console.log(`confirm user in discussion: ${users}`);
   if(!users.includes(request.user)){  
     return next( Object.assign(
       Error('Illegal discussion request'),
@@ -34,14 +33,10 @@ function(request, response, next){
   next();
 },
 function(request, response){
-  console.log(`got a request for: ${request.users}`);
   discussion_model.findOne({users: request.users}, '-_id messages' ).populate('messages')  
     .then( ({messages})  => {
-      console.log(messages);
       const results = [...Array(messages.length).keys()]
         .map( index => {return {index: index}});
-      console.log('creating response');
-      console.log(results);
       for(const [result, message] of utility_m.zip(results, messages)){
         result.self_authored = message.author === request.user ;
         result.configuration = {
@@ -52,8 +47,6 @@ function(request, response){
         };
         delete result.index;
       }
-      console.log('sending:');
-      console.log( results );
       response.send({messages:results});
     }); 
 },
@@ -66,6 +59,7 @@ const message_upload_chain = [
 session_id_m.extraction_chain,
 multer_m().array('audio'),
 function(request, response) {
+  console.log(`received message upload from: ${request.user} in ${request.body.discussion}`);
   const message = new message_model({
     discussion: request.body.discussion,
     author: request.user, 
@@ -74,8 +68,6 @@ function(request, response) {
     track_counter: request.files.length,
     file_ids: [...Array(request.files.length)].map( () => new mongoose_m.Types.ObjectId() )
   }); 
-  console.log('upload_chain');
-  console.log(message);
   function write_file_a( [id, file] ){
     return pipeline( 
       stream_m.Readable.from(file.buffer),
@@ -90,17 +82,14 @@ function(request, response) {
   Promise.allSettled(files.map(write_file_a))  
       .then( () => message.save() )
       .then( () => message.update_discussion_a() )
-      .then( () => {
-        console.log( `saved message is: ${message}` );
-        response.end();
-      }).catch(console.error)
+      .then( () => response.end() )
+      .catch(console.error)
 }];
 router.post('/message', message_upload_chain); 
 
 const message_request_chain = [
 function(request, response) {
   const {discussion, message_index, track_index} = request.params;
-  console.log( `got request for message: ${discussion}/${message_index}/${track_index}` );
   const discussion_query_a = discussion_model.findOne({users: discussion.split('+')}, '-_id messages').populate('messages');
   let message;
   let cursor;
@@ -109,8 +98,6 @@ function(request, response) {
     return bucket.find( message.file_ids[track_index] );
   }).then( track_cursor => {cursor = track_cursor; return cursor.next()} ) 
   .then( track => {
-    console.log('got track');
-    console.log( track );
     //REFLECT: no findOne for bucket, therefore, cursor iterates only once ?
     response.setHeader('Accept-Ranges', 'bytes');
     response.setHeader('Content-Type', track.contentType );

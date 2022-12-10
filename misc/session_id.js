@@ -23,7 +23,6 @@ add_session(user){
     ); 
   }, 20 * 60 * 1000 );
   registered_sessions.push( session );
-  console.log(registered_sessions);
   return session;
 }, 
 extraction_chain : [
