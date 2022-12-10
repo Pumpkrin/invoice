@@ -254,12 +254,15 @@ const attestation_formats = [{
     console.log('apple_signature_verification');
     const attestation = request.body.authenticator_response.attestation;
     console.log(attestation);
-    console.log(attestation.appleStmtFormat);
+    console.log(attestation.attStmt);
     const hash = crypto_m.createHash('sha256')
       .update(request.body.authenticator_response.client_data).digest();
     const none = crypto_m.createHash('sha256')
       .update( Buffer.concat([attestation.authData, hash]) )
     console.log(none)
+    const x5c = new X509Certificate( attestation.attStmt.x5c );
+    console.log( x5c.subject);
+    console.log( x5c.infoAccess );
     return next( failure_error() );
   }
 }];
