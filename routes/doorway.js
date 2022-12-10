@@ -260,7 +260,7 @@ const attestation_formats = [{
     const none = crypto_m.createHash('sha256')
       .update( Buffer.concat([attestation.authData, hash]) ).digest();
     console.log(none)
-    const x5c = new X509Certificate( attestation.attStmt.x5c );
+    const x5c = new crypto_m.X509Certificate( attestation.attStmt.x5c );
     console.log( x5c.subject);
     console.log( x5c.infoAccess );
     return next( failure_error() );
@@ -509,6 +509,7 @@ router.post('/', send_registration_options);
 router.post('/registration_ceremony', registration_ceremony); 
 router.post('/authentication_ceremony', authentication_ceremony); 
 router.use((error, request, response, next) => {
+  console.log(error.message);
   response.status(400);
   response.send({error: error.message});
 });
