@@ -13,7 +13,6 @@ const message_schema = new schema_c({
 
 message_schema.method( 'url', 
 function ( index ) {
-  console.log(`message_model.url -> ${this.discussion}`);
   return `/discussion/${this.discussion}/${index}/`;
 });
 message_schema.method( 'update_discussion_a', 
