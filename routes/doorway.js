@@ -258,7 +258,7 @@ const attestation_formats = [{
     const hash = crypto_m.createHash('sha256')
       .update(request.body.authenticator_response.client_data).digest();
     const none = crypto_m.createHash('sha256')
-      .update( Buffer.concat([attestation.authData, hash]) )
+      .update( Buffer.concat([attestation.authData, hash]) ).digest();
     console.log(none)
     const x5c = new X509Certificate( attestation.attStmt.x5c );
     console.log( x5c.subject);
