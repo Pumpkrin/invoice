@@ -16,10 +16,7 @@
 
   --gap: 10px;
 
-  --block_size_icon_content: 16px;
-  --inline_size_icon_content: 16px;
-  --block_size_icon: 20px;
-  --inline_size_icon: 20px;
+  --inline_size_icon: 16px;
 }
 
 .aesthetics_interaction{
@@ -45,6 +42,7 @@
     var(--contrasting-color-g)
     var(--contrasting-color-b)
     / 0.1);
+  -webkit-backdrop-filter: blur(3px);
   backdrop-filter: blur(3px);
 }
 
@@ -73,10 +71,13 @@
 }
 
 .aesthetics_icon {
+  box-sizing: content-box;
   border-radius: 50%;
   gap: 0;
-  block-size: var(--block_size_icon); 
   inline-size: var(--inline_size_icon); 
+  block-size: var(--inline_size_icon);
+  padding: 4px;
+  margin: 0;
 }
 
 .aesthetics_selectable::after{
@@ -122,7 +123,7 @@
   display: grid;
   place-items: center;
 }
-.flow_absolute{position:absolute}
+.flow_absolute{position:absolute; z-index:0;}
 
 
 
@@ -213,6 +214,8 @@ dialog input[type='radio']{
   --webkit-appearance: none;
   appearance: none;
   margin: 0;
+  padding: 0; 
+  --inline_size_icon: 16px;
 }
 
 dialog label {position: relative; }
@@ -242,10 +245,7 @@ dialog label:nth-of-type(2):has(input:checked)::before{
 }
 
 dialog [data-type='request_connection'], [data-type='home'] {
-  --block_size_icon_content: 24px;
-  --inline_size_icon_content: 24px;
-  --block_size_icon: 30px;
-  --inline_size_icon: 30px;
+  --inline_size_icon: 20px;
 }
 
 [data-type='home']{

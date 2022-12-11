@@ -20,10 +20,7 @@ input[type=range]:focus{ outline: none }
   border-radius: 50%;
 }
 [data-type='discussion']> button{
-  --block_size_icon: 30px;
-  --inline_size_icon: 30px;
-  --block_size_icon_content: 18px;
-  --inline_size_icon_content: 18px;
+  --inline_size_icon: 20px;
   inset-block-start:1rem;
   transform:translateX(var(--offset));
 }
@@ -74,8 +71,7 @@ input[type=range]:focus{ outline: none }
 
 /*------------------------message-track--------------------------*/
 message-track{
-  --block_size_icon: 22px;
-  --inline_size_icon: 22px;
+  --inline_size_icon: 13px;
   inline-size: 70%;
   position: relative;
   --inline_offset: 0;
@@ -144,8 +140,8 @@ message-track[data-state='active'].self_authored > input[type='checkbox']{
 }
 
 message-track > [data-type='sound_track'] {
-  --inline_size_icon_content: 6px;
-  --block_size_icon_content: 24px;
+  --inline_size: 6px;
+  --block_size: 24px;
   position:relative;
   color: var(--main-color);
   --gap:0px;
@@ -153,7 +149,7 @@ message-track > [data-type='sound_track'] {
 message-track > [data-type='sound_track'] > input{
   position:absolute;
   inset-inline-start:-1px;
-  inline-size: calc( 25 * var(--inline_size_icon_content) + 2px);
+  inline-size: calc( 25 * var(--inline_size) + 2px);
 }
 message-track > [data-type='sound_track'] > input::-webkit-slider-thumb { 
   box-sizing: border-box;
@@ -170,7 +166,7 @@ message-track > [data-type='sound_track'] > input::-webkit-slider-thumb {
   background:transparent;
 }
 message-track > [data-type='sound_track'] > input::-webkit-slider-runnable-track { 
-  inline-size: calc( 25 * var(--inline_size_icon_content) + 2px);
+  inline-size: calc( 25 * var(--inline_size) + 2px);
 }
 
 message-track > [data-type='sound_track'] > input::-moz-range-thumb {
@@ -188,10 +184,12 @@ message-track > [data-type='sound_track'] > input::-moz-range-thumb {
   background:transparent;
 }
 message-track > [data-type=sound_track] > input::-moz-range-track {
-  inline-size: calc( 25 * var(--inline_size_icon_content) + 2px);
+  inline-size: calc( 25 * var(--inline_size) + 2px);
 }
 message-track > [data-type=sound_track] > svg{ 
   stroke-width:1px;
+  inline-size: var(--inline_size);
+  block-size: var(--block_size);
 }
 
 message-track > [data-type='timeline']{
@@ -235,9 +233,7 @@ replay-track > button{ border-radius: 5px; }
 
 /*------------------------controls--------------------------*/
 [data-type='controls']{
-  --block_size_icon_content: 24px;
-  --block_size_icon: 30px;
-  --inline_size_icon: 30px;
+  --inline_size_icon: 24px;
 }
 
 [data-type='recorder_controller']{ grid-column: 2; grid-row: 2; }
@@ -267,8 +263,8 @@ replay-track > button{ border-radius: 5px; }
 }
 
 svg {
-  block-size: var(--block_size_icon_content); 
-  inline-size: var(--inline_size_icon_content); 
+  inline-size: var(--inline_size_icon); 
+  aspect-ratio: 1;
   stroke: currentcolor;
   fill: currentcolor;
 }
