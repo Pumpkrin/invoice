@@ -8,6 +8,7 @@ const multer_m = require('multer');
 const cbor_m = require('cbor');
 const asn1_m = require('@lapo/asn1js');
 const util_m = require('node:util');
+const fs_m = require('node:fs');
 
 const session_id_m = require('../misc/session_id');
 const {generate_avatar} = require('../misc/avatar');
@@ -23,6 +24,10 @@ const server_configuration = {
       this.scheme + '://' + this.host + ':' + this.port;
   }
 };
+
+const apple_webauthn_root_ca = new crypto_m.X509Certificate(
+  fs_m.readFileSync('certificate/AppleWebauthnRootCA.pem')
+);
 
 const user_doorway = [
   multer_m().none(),
@@ -213,9 +218,32 @@ function extract_signature_count(options, request, response, next){
   next();
 }
 
-function extract_oid( certificate, oid ){
-  const asn1_structure = asn1_m.decode( certificate.raw );
-
+function extract_oid(certificate, oid ){
+  const structure = asn1_m.decode(certificate.raw);
+  const traversal = (object, oid) => {
+    //REFLECT: for loop is necesssary in order to exit the trasversal at the right time
+    if(!object.sub){ return; }
+    for(const sub of object.sub) {
+      const result = traversal( sub, oid );
+      if( result ){ return result; }
+      if(sub.typeName() === 'OBJECT_IDENTIFIER' && sub.content() === oid){return object;} 
+    }
+  };
+  return traversal(structure, oid);
+}
+function extract_nonce( structure ){
+  //REFLECT: does pretty much the same thing as extract_oid, but beware of premature abstraction
+  const traversal = object => {
+    if(!object.sub){ return; }
+    for(const sub of object.sub) {
+      const result = traversal( sub );
+      if( result ){ return result; }
+      if( !sub.sub && sub.typeName() !== 'OBJECT_IDENTIFIER' ){
+        return sub.stream.enc.slice( sub.posContent(), sub.posEnd() ); 
+      }
+    }
+  };
+  return traversal(structure);
 }
 
 const attestation_formats = [{
@@ -241,35 +269,69 @@ const attestation_formats = [{
 
     attestation.type= 'self';
     return next();
-  }
+  },
+  confirm_attestation_trustworthiness(request, response, next){return next();}
 },{
   format:'none',
   signature_verification(request, response, next){
     const attestation = request.body.authenticator_response.attestation;
     attestation.type= 'none';
     return next();
-  }
+  },
+  confirm_attestation_trustworthiness(request, response, next){return next();}
 },{
   format: 'apple',
   signature_verification(request, response, next){
-    console.log('apple_signature_verification');
     const attestation = request.body.authenticator_response.attestation;
+
     const hash = crypto_m.createHash('sha256')
       .update(request.body.authenticator_response.client_data).digest();
     const expected_nonce = crypto_m.createHash('sha256')
       .update( Buffer.concat([attestation.authData, hash]) ).digest();
+
     const certificate = new crypto_m.X509Certificate( attestation.attStmt.x5c[0] );
-    const retrieved_nonce = extract_oid( certificate, '1.2.840.113635.100.8.2' );
+
+    const oid_structure = extract_oid( certificate, '1.2.840.113635.100.8.2' );
+    const retrieved_nonce = extract_nonce( oid_structure );
     if( Buffer.compare( expected_nonce, retrieved_nonce ) !== 0 ){
-      console.log('nonce comparison was not successful');
       return next( failure_error() );
     }
-    console.log('nonce compared successfuly');
-    if( x5c.verify(crypto_m.createPublicKey(attestation.credental_data.jwk_key)) ){ 
-      console.log(`verify did not work`);
+
+    const key = crypto_m.createPublicKey( attestation.credential_data.jwk_key );
+    if( certificate.verify(key) ){ 
       return next( failure_error() );
     }
+
+    attestation.type = 'AnonymizationCA';
+    attestation.trust_path = attestation.attStmt.x5c;
     next();
+  },
+  confirm_attestation_trustworthiness(request, response, next){
+    const attestation = request.body.authenticator_response.attestation;
+    const certificates = attestation.trust_path.map(
+      certificate => new crypto_m.X509Certificate(certificate)
+    );
+    certificates.push( apple_webauthn_root_ca );
+    for( let index = 0; index < certificates.length -1 ; ++index) {
+      if( certificates[index].issuer !== certificates[index+1].subject ){
+        console.error('Failed to validate certificate path, issuer and subject do not match');
+        return next(failure_error());
+      }
+      if( !certificates[index].checkIssued( certificates[index+1] )){
+        console.error('Failed to validate certificate path, certificate has not been issued by provided ancestor'); 
+        return next(failure_error());
+      }
+    }
+    const root_certificate = certificates[certificates.length -1];
+    if( root_certificate.issuer !== root_certificate.subject ){
+      console.error('Failed to validate certificate path, issuer and subject do not match');
+      return next(failure_error());
+    }
+    if( !root_certificate.checkIssued( root_certificate )){
+      console.error('Failed to validate certificate path, certificate has not been issued by provided ancestor'); 
+      return next(failure_error());
+    }
+    return next();
   }
 }];
 function allow_access( request, response ){
@@ -382,7 +444,7 @@ const registration_ceremony = [
     if( !supported_format ){
       return next( supported_error() );
     }
-    attestation.signature_verification = supported_format.signature_verification;
+    Object.assign( attestation, supported_format );
 
     next();
   }, 
@@ -406,9 +468,9 @@ const registration_ceremony = [
     return attestation.signature_verification( request, response, next);
   },
   function( request, response, next ){ console.log('a:verification_procedure'); next(); },
-  function check_signature_trustworthiness( request, response, next ){
-    //REFLECT: since there is no need to check for certificate, here any error would be catched before
-    next();
+  function confirm_attestation_trustworthiness( request, response, next ){
+    const attestation = request.body.authenticator_response.attestation;
+    return attestation.confirm_attestation_trustworthiness(request, response, next);
   },
 //  function check_user_existence( request, response, next ){
 //    if( users.some( user => user.id === request.raw_id ) ){
@@ -516,13 +578,5 @@ router.use((error, request, response, next) => {
   response.status(400);
   response.send({error: error.message});
 });
-
-router.get('/mock/apple', 
-function(request, response, next){
-
-  next();
-},
-registration_ceremony
-);
 
 module.exports = router;
