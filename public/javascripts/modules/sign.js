@@ -6,7 +6,6 @@ const form = document.querySelector('[data-type="connection_form"]');
 form.addEventListener(
   'submit',
   function user_authentication_handler( event ) {
-    console.log('submitting form');
     event.preventDefault();
     let response_status;
     const submit_p = fetch('./doorway', {
@@ -17,27 +16,25 @@ form.addEventListener(
       .then( response => {
         if( !response_status ){ throw Error(response.error); }
         return response;
-      }).then( options => { alert('doorway'); user = options.public_key.user.name; return options; } );  
+      }).then( options => { console.log(options); user = options.public_key.user.name; return options; } );  
 
 
     fulfillment_chain_a(submit_p, registration_path)
       .catch( silence_pathing )
-      .catch( alert_handler ) 
-//    .catch( error_handler );
+//      .catch( alert_handler ) 
+      .catch( error_handler );
     fulfillment_chain_a(submit_p, authentication_path)
       .catch( silence_pathing )
-      .catch( alert_handler ) 
-//      .catch( error_handler );
+//      .catch( alert_handler ) 
+      .catch( error_handler );
   }
 );
 
 
 function finalize_connection(message, response){
- alert('finalize_connection');
  let response_status = response.ok;
  return response.json().then( response => {
    if(!response_status){throw Error( response.error );}
-   console.log(response.discussions);
    load_home( {message: message, user: user, avatar: response.avatar, discussions: response.discussions} );
    const dialog = document.querySelector('dialog[data-type="connection_dialog"]');
    dialog.close();
@@ -49,7 +46,6 @@ function registration( options ){
   return create_credentials_a( options ); 
 },
 function post_credentials( credentials ) {
-  console.log(credentials);
   credentials.user = user;
   return fetch('./doorway/registration_ceremony', {
     method: 'post',
@@ -61,12 +57,10 @@ finalize_connection.bind( null, '' )
 ];
 const authentication_path = [
 function authentication( options ){
-  alert('authentication');
   if( options.required_action !== 'authentication'){throw Error('', {cause: 'pathing'});}
   return get_credentials_a( options ); 
 },
 function post_credentials( credentials ) {
-  alert('post');
   credentials.user = user;
   return fetch('./doorway/authentication_ceremony', {
     method: 'post',
@@ -158,6 +152,7 @@ const formatters = [{
     }};
   }
 }];
+
 function format_fields( target, format ) {
   const formatter = formatters.find( formatter => formatter.format === format );
 
@@ -166,7 +161,7 @@ function format_fields( target, format ) {
     const result = formatter[property]( target, property );  
     object[ result.property ] = result.value;
   };
-  const copy = (target, property) => {object[property] = target[property]}
+  const copy = (target, property) => object[property] = target[property]
 
   for( const property in target ){
     property in formatter ? transform(target, property) : copy(target, property);
@@ -181,7 +176,7 @@ async function create_credentials_a( {public_key} ){
 }
 
 async function get_credentials_a( {public_key} ){
-  alert('get_credentials');
+  console.log( format_fields(public_key, 'get_credentials') );
   return navigator.credentials.get( 
     {publicKey: format_fields(public_key, 'get_credentials')} 
   );
