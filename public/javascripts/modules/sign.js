@@ -164,6 +164,7 @@ function format_fields( target, format ) {
   const copy = (target, property) => object[property] = target[property]
 
   for( const property in target ){
+    console.log( property );
     property in formatter ? transform(target, property) : copy(target, property);
   }
   return object;
@@ -176,7 +177,6 @@ async function create_credentials_a( {public_key} ){
 }
 
 async function get_credentials_a( {public_key} ){
-  console.log( format_fields(public_key, 'get_credentials') );
   return navigator.credentials.get( 
     {publicKey: format_fields(public_key, 'get_credentials')} 
   );
