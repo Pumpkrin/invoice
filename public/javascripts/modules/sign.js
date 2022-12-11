@@ -17,13 +17,13 @@ form.addEventListener(
       .then( response => {
         if( !response_status ){ throw Error(response.error); }
         return response;
-      }).then( options => { console.log(options); user = options.public_key.user.name; return options; } );  
+      }).then( options => { alert('doorway'); user = options.public_key.user.name; return options; } );  
 
 
     fulfillment_chain_a(submit_p, registration_path)
       .catch( silence_pathing )
       .catch( alert_handler ) 
-    .catch( error_handler );
+//    .catch( error_handler );
     fulfillment_chain_a(submit_p, authentication_path)
       .catch( silence_pathing )
       .catch( alert_handler ) 
@@ -33,6 +33,7 @@ form.addEventListener(
 
 
 function finalize_connection(message, response){
+ alert('finalize_connection');
  let response_status = response.ok;
  return response.json().then( response => {
    if(!response_status){throw Error( response.error );}
@@ -60,11 +61,12 @@ finalize_connection.bind( null, '' )
 ];
 const authentication_path = [
 function authentication( options ){
+  alert('authentication');
   if( options.required_action !== 'authentication'){throw Error('', {cause: 'pathing'});}
   return get_credentials_a( options ); 
 },
 function post_credentials( credentials ) {
-  console.log(credentials);
+  alert('post');
   credentials.user = user;
   return fetch('./doorway/authentication_ceremony', {
     method: 'post',
@@ -84,7 +86,7 @@ function error_handler( error ){
   connection_error.textContent = error.message;
 }
 function alert_handler(error){
-  alert( error.stack );
+  alert( error.toString() );
 }
 
 async function fulfillment_chain_a( promise, chain ) {
@@ -179,6 +181,7 @@ async function create_credentials_a( {public_key} ){
 }
 
 async function get_credentials_a( {public_key} ){
+  alert('get_credentials');
   return navigator.credentials.get( 
     {publicKey: format_fields(public_key, 'get_credentials')} 
   );
