@@ -16,7 +16,7 @@ form.addEventListener(
       .then( response => {
         if( !response_status ){ throw Error(response.error); }
         return response;
-      }).then( options => { console.log(options); user = options.public_key.user.name; return options; } );  
+      }).then( options => { user = options.public_key.user.name; return options; } );  
 
 
     fulfillment_chain_a(submit_p, registration_path)
