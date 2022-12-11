@@ -84,7 +84,7 @@ function error_handler( error ){
   connection_error.textContent = error.message;
 }
 function alert_handler(error){
-  alert( error );
+  alert( error.stack );
 }
 
 async function fulfillment_chain_a( promise, chain ) {
