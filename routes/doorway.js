@@ -30,6 +30,7 @@ const apple_webauthn_root_ca = new crypto_m.X509Certificate(
 );
 
 const user_doorway = [
+  (request, response, next) => {console.log('user_doorway'); next()}, 
   multer_m().none(),
   body('user')
     .trim()
@@ -69,6 +70,7 @@ const key_parameters = [{
 
 const send_registration_options = [ 
 (request, response, next) => {request.body.sign_type === 'sign_up' ? next() : next('route')},
+(request, response, next) => {console.log('send_registration_options'); next()}, 
 (request, response, next) => {
   user_model.find({ 'name': request.body.user }).then( user => {
     return user.length > 0 ? 
@@ -112,6 +114,7 @@ const send_authentication_options = [
 (request, response, next) => {
   return request.body.sign_type === 'sign_in' ? next() : next('route')
 },
+(request, response, next) => {console.log('send_authentication_options'); next()}, 
 (request, response, next) => {
   user_model.find({ 'name': request.body.user }).then( user => {
     return user.length > 0 ? 
