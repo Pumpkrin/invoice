@@ -505,6 +505,7 @@ const registration_ceremony = [
 
 let counter = 0;
 const authentication_ceremony = [
+  function( request, response, next ){ console.log('authentication_ceremony'); next(); },
   express.json(),
 //  function( request, response, next ){ console.log(request.body); next(); },
   function decode_response( request, response, next ) { 
