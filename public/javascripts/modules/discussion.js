@@ -53,9 +53,7 @@ function load_messages_a() {
     .then( response => {if(!response.ok){throw response}; return response;} )  
     .then( response => response.json() )
     .then( response => {
-      console.log(response);
       response.messages.forEach( message => {
-        console.log(message);
         const track = Object.assign(
           document.createElement('message-track'),
           {classList:`flow_flex aesthetics_pannel ${message.self_authored? 'self_authored':''}`}

@@ -17,7 +17,6 @@ const primed_states = [{
   listen_to:[{
     event: 'start_recording',
     handler: function(event) {
-      console.log( 'got start_recording, unprimed recorder' );
       this.start(1000);
       this.controller = event.detail.emitter;
       this.controller.dispatchEvent( new Event('toggle') );
@@ -41,21 +40,18 @@ const primed_states = [{
   listen_to:[{
     event: 'start_recording',
     handler: function(event) { 
-      console.log( 'got start_recording, primed recorder' );
       this.resume();
       this.controller.dispatchEvent( new CustomEvent('toggle') );
     },  
   },{
     event: 'stop_recording',
     handler: function(event) { 
-      console.log( 'got stop_recording, primed recorder' );
       this.pause();
       setTimeout(() => this.controller.dispatchEvent( new CustomEvent('toggle') ));
     },  
   },{
     event: 'unprime',
     handler: function(event) { 
-      console.log( 'got unprime, primed recorder' );
       this.stop();
     },  
   }],
@@ -82,9 +78,7 @@ let chunks = [];
 recorder.addEventListener( 
   'dataavailable',
   function (event) { 
-    console.log('got dataavailable, media_recorder');
     chunks.push(event.data);
-    console.log(chunks);
     this.dispatchEvent( new Event('data_available') );
     //REFLECT: because dispatch is synchronous, audio_loaded need to be sent here, for correct order in micro task queue
     this.controller.dispatchEvent( new Event('audio_transmitted') );
@@ -92,7 +86,6 @@ recorder.addEventListener(
     this.controller.dispatchEvent( new CustomEvent('increment_duration') );
   }
 );
-recorder.addEventListener('stop', event => console.log('stop, media_recorder'));
 
 recorder['data-type'] = 'media_recorder';
 

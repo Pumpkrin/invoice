@@ -3,20 +3,17 @@ import * as utility_m from './utility.js'
 import * as observer_m from './observer.js'
 const messages = document.querySelector('[data-type="messages"');
 messages.stop_playing = function stop_playing(options) {
-  console.log('stop_playing, messages');
   Array.from(this.childNodes).forEach(
     message_track => message_track.dispatchEvent(new CustomEvent('stop_playing'))
   );
 }
 messages.stop_others = function stop_others(options) {
-  console.log('stop_others, messages');
   const index = Array.from(this.childNodes).indexOf(options.emitter);
   this.querySelectorAll( `:not(message-track:nth-child(${index+1}))` ).forEach(
     track => track.dispatchEvent( new CustomEvent('stop_playing') )
   );
 };
 messages.set_selectable = function set_selectable() {
-  console.log('set_selectable, messages');
   Array.from(this.childNodes).filter(
     message_track => !message_track.classList.contains('user_authored')
   ).forEach(
@@ -24,7 +21,6 @@ messages.set_selectable = function set_selectable() {
   );
 }
 messages.set_unselectable = function set_unselectable() {
-  console.log('set_unselectable, messages');
   Array.from(this.childNodes).filter(
     message_track => !message_track.classList.contains('user_authored')
   ).forEach(
@@ -32,7 +28,6 @@ messages.set_unselectable = function set_unselectable() {
   );
 }
 messages.unset_others = function unset_others(options) {
-  console.log('unset_others, messages');
   const index = Array.from(this.childNodes).indexOf(options.emitter);
   Array.from(this.querySelectorAll( `:not(message-track:nth-child(${index+1}))` )).filter(
     message_track => !message_track.classList.contains('user_authored')
@@ -41,12 +36,10 @@ messages.unset_others = function unset_others(options) {
   );
 };
 messages.check_selected = function check_selected(options) {
-  console.log('check_selected, messages');
   const message_track = Array.from(this.childNodes).find( 
     message_track => message_track.querySelector('input').checked 
   );
   if(message_track){
-    console.log('selected_message found !');
     options.emitter.message_type = 'answer';
     this.selection = {
      message : message_track,
@@ -56,7 +49,6 @@ messages.check_selected = function check_selected(options) {
   }
 }
 messages.resume_selected = function resume_selected() {
-  console.log('resume_selected, messages');
   if( this.selection.track ){
     this.selection.message.current_track = this.selection.track;
     this.selection.message.current_track.currentTime = this.selection.time;
@@ -67,7 +59,6 @@ messages.resume_selected = function resume_selected() {
   }
 }
 messages.clear_selected = function clear_selected() {
-  console.log('clear_selected, messages');
   if(this.selection){
     this.selection.message.checked = false;
     this.selection = undefined;
@@ -91,7 +82,6 @@ class message_track extends HTMLElement {
     listen_to: [{
       event: 'unset',
       handler: function(event) {
-        console.log('unset, message_track');
         this.querySelector('input').checked = false; 
       }  
     }],
@@ -186,7 +176,6 @@ class message_track extends HTMLElement {
       'change',
       event => {if(selection.checked){ messages.unset_others({emitter:this});}} 
     );
-    selection.addEventListener('change', () => console.log('change'));
     const slider = this.querySelector('input[type="range"]');
     slider.addEventListener(
       'input',

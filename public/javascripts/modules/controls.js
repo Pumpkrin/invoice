@@ -36,8 +36,6 @@ function template_content( parameter ) {
 }
 controls.attach_all = function attach_all(){
   //TODO&REFLECT: subject to change in the future, cross and check are not always needed
-  console.log('attach_all, controls');
-  console.log(`${this.message_type}`);
   const allowed_controls = {
     answer : ['validator', 'rejector', 'sender', 'eraser'],
     message : ['sender', 'eraser']
@@ -74,7 +72,6 @@ const recording_states = [{
   listen_to: [{
     event: 'activate',
     handler: function(event) { 
-      console.log('got activate, recorder_controller');
       this.start_recording(); },
   }],
   transitions:[{event:'activate', target:'active'}]
@@ -98,18 +95,15 @@ const recording_states = [{
   listen_to: [{
     event: 'stop_recording',
     handler: function(event) {
-      console.log('got stop_recording, recorder_controller');
       this.stop_recording();},
   },{
     event: 'inactivate',
     handler: function(event) {
-      console.log('got inactivate, recorder_controller'); 
       this.stop_recording(); },
   },{
     //REFLECT: needed in order to listen to this event only when currently recording
     event: 'increment_duration',
     handler: function(event){
-      console.log('got increment_duration, recorder_controller');
       this.sink.increment_duration(); },
   }],
   transitions:[
